@@ -70,17 +70,5 @@ for toneidx = 1:1:numtones
     Mc(toneidx,:) = fftctone;
 end
 
-% calculate note salience matrix of the stft spectrogram (cosine
-% similarity)
-Ss = Ms*X;
-Sc = Mc*X;
-sizeM = size(Ms);
-sizeX = size(X);
-p = 1:sizeM(1);
-k = 1:sizeX(2);
-figure;
-image(k,p,Ss);
-set(gca,'YDir','normal');
-figure;
-image(k,p,Sc);
-set(gca,'YDir','normal');
+% calculate note salience matrix for the stft spectrogram
+
