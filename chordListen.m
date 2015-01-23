@@ -8,6 +8,7 @@
 root = '../AudioSamples/';
 audio = 'tuihou-1.mp3';
 path = [root audio];
+close all;
 
 [x,fs] = audioread(path);
 songinfo = audioinfo(path);
@@ -87,38 +88,39 @@ sizeX = size(X);
 
 % calculate running mean and runnind std matrix for every column
 sizeSpre = size(Sc);
-% rmeanS = zeros(sizeSpre);
-% rstdS = zeros(sizeSpre);
-% rmeanC = zeros(sizeSpre);
-% rstdC = zeros(sizeSpre);
-% for j = 1:1:sizeSpre(2)
-%     % do a running mean and std of the 216 bins within a sliding window of <18 bin
-%     colS = Ss(:,j);
-%     colC = Sc(:,j);
-%     for i = 1:1:sizeSpre(1)
-%         wmean = max(i-8,1):min(i+9,sizeSpre(1));
-%         rmeanS(i,j) = mean(colS(wmean));
-%         rmeanC(i,j) = mean(colC(wmean));
-% %         rstdS(i,j) = std(colS(wmean));
-% %         rstdC(i,j) = std(colC(wmean));
-%     end
-% end
+rmeanS = zeros(sizeSpre);
+rstdS = zeros(sizeSpre);
+rmeanC = zeros(sizeSpre);
+rstdC = zeros(sizeSpre);
+for j = 1:1:sizeSpre(2)
+    % do a running mean and std of the 216 bins within a sliding window of <18 bin
+    colS = Ss(:,j);
+    colC = Sc(:,j);
+    for i = 1:1:sizeSpre(1)
+        wmean = max(i-8,1):min(i+9,sizeSpre(1));
+        rmeanS(i,j) = mean(colS(wmean));
+        rmeanC(i,j) = mean(colC(wmean));
+%         rstdS(i,j) = std(colS(wmean));
+%         rstdC(i,j) = std(colC(wmean));
+    end
+end
 
 % compute preliminary salience matrix
 Spre = Ss.*Sc;
 
-% for i = 1:1:sizeSpre(1)
-%     for j = 1:1:sizeSpre(2)
-%         if Ss(i,j) < rmeanS(i,j) || Sc(i,j) < rmeanC(i,j)
-%             Spre(i,j) = 0;
-%         end
-%     end
-% end
+for i = 1:1:sizeSpre(1)
+    for j = 1:1:sizeSpre(2)
+        if Ss(i,j) < rmeanS(i,j) || Sc(i,j) < rmeanC(i,j)
+            Spre(i,j) = 0;
+        end
+    end
+end
 % p = 1:sizeSpre(1);
 % k = 1:sizeSpre(2);
 % figure;
 % image(k,p,Spre);
 % set(gca,'YDir','normal');
+% title('preliminary salience matrix');
 
 % % tuning algorithm (this algorithm seems to be unreliable)
 % Sbar = (sum(Spre,2))/sizeSpre(2); % first sum over all time frames
@@ -166,6 +168,7 @@ k = 1:sizeS(2);
 figure;
 image(k,p,S);
 set(gca,'YDir','normal');
+title('note salience matrix');
 
 % compute bass and treble profiles (once for all time)
 gb = zeros(1,sizeS(1));
