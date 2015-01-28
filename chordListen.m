@@ -241,6 +241,13 @@ set(gca,'YDir','normal');
 set(gca, 'YTick',1:12, 'YTickLabel', notenames);
 title('treblechromagram');
 
+% normalize the chromagrams
+for i = 1:1:sizeS(2)
+    chromagram(:,i) = chromagram(:,i) / max(chromagram(:,i));
+    treblechromagram(:,i) = treblechromagram(:,i) / max(treblechromagram(:,i));
+    basschromagram(:,i) = basschromagram(:,i) / max(basschromagram(:,i));
+end
+
 % try some DBN models for,
 % chord progression inference,
 % based on,
@@ -312,7 +319,7 @@ for i = 1:1:Q
     sigma(:,:,i) = diag(ones(1,12)*0.2);
 end
 transmat = ones(Q,Q);
-st = 50; % the self transition factor, with larger value yields stronger smoothy.
+st = 10; % the self transition factor, with larger value yields stronger smoothy.
 for i = 1:1:Q
     transmat(i,i) = transmat(i,i)*st;
 end
@@ -323,17 +330,17 @@ bnet.CPD{2} = gaussian_CPD(bnet, 2, 'mean', mu, 'cov', sigma); % gaussian emissi
 bnet.CPD{3} = tabular_CPD(bnet, 3, transmat); % a reasonable transition matrix
 
 jengine = smoother_engine(jtree_2TBN_inf_engine(bnet));
-T = 10;
-ev = sample_dbn(bnet, T);
+T = sizeS(2); % the total number of time slices contained in the evidence
 evidence = cell(ss,T);
-evidence(onodes,:) = ev(onodes, :); % all cells besides onodes are empty
+% use real evidence from chromagram
+for i = 1:1:T
+    ev = treblechromagram(:,i);
+    ev = [ev(4:end) ; ev(1:3)]; % rearrange so that C is at the bottom
+    evidence(onodes,i) = num2cell(ev,1);
+end
 [jengine,llj] = enter_evidence(jengine, evidence);
-i = 1; t = 5;
-mj = marginal_nodes(jengine, i, t);
-display(mj.T);
 mpe = find_mpe(jengine, evidence);
-display(mpe);
-display(ev);
+display(mpe(1,1:50));
 
 
 
