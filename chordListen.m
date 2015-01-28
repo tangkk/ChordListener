@@ -240,3 +240,103 @@ image(k,p,sfactor*treblechromagram);
 set(gca,'YDir','normal');
 set(gca, 'YTick',1:12, 'YTickLabel', notenames);
 title('treblechromagram');
+
+% try some DBN models for,
+% chord progression inference,
+% based on,
+% chromagram observations.
+%
+% naming conventions:
+% T = treble progression, B = bass progression,
+% TC = treble chromagram, BC = bass chromagram (both Lmax normalized)
+% Ch = chord progression(Ch(k) = T(k)/B(k), slash chord representation)
+%
+% the 1st model: 2 separate hidden markov chains
+% treble structure:
+% T(i-1) -> T(i)
+%   |        |
+%   v        v
+% TC(i-1)   TC(i)
+%
+% bass structure:
+% B(i-1) -> B(i)
+%   |        |
+%   v        v
+% BC(i-1)   BC(i)
+% 
+% chord progression computation:
+% Ch = T/B
+
+% ******************************************* %
+% treble model
+ss = 2;
+intra = zeros(ss);
+intra(1,2) = 1;
+inter = zeros(ss);
+inter(1,1) = 1;
+hnodes = 1;
+onodes = 2;
+dnodes = 1;
+cnodes = 2;
+eclass1 = [1 2];
+eclass2 = [3 2];
+eclass = [eclass1 eclass2];
+Q = 25; % consider the maj min treble model, there are totally 24 chords  + 1 no-chord
+O = 12; % 12 pitch-classes, each treble has a mean and cov for each pitch class
+ns = [Q O];
+bnet = mk_dbn(intra, inter, ns, 'discrete', dnodes, 'observed', onodes, 'eclass1', eclass1, 'eclass2', eclass2);
+% set CPDs: CPD{1} <- prior; CPD{2} <- emission CPD{3} <- transition
+% let's order the trebles in such way:
+% 1 2  3 4  5 6 7  8 9  10 11 12 13 14  15 16  17 18 19  20 21  22 23  24 25
+% C C# D D# E F F# G G# A  A# B  Cm C#m Dm D#m Em Fm F#m Gm G#m Am A#m Bm N
+% let's order the pitch classes in such way:
+% 1 2  3 4  5 6 7  8 9  10 11 12
+% C C# D D# E F F# G G# A  A# B
+prior = normalise(ones(1,Q));
+mu = zeros(O,Q);
+sigma = zeros(O,O,Q);
+for i = 1:1:12
+    muimaj = zeros(1,12);
+    muimin = zeros(1,12);
+    muimaj(i) = 1;
+    muimaj(mod(i+4-1,12)+1) = 1;
+    muimaj(mod(i+7-1,12)+1) = 1;
+    muimin(i) = 1;
+    muimin(mod(i+3-1,12)+1) = 1;
+    muimin(mod(i+7-1,12)+1) = 1;
+    mu(:,i) = muimaj;
+    mu(:,i+12) = muimin;
+end
+mu(:,Q) = ones(1,12);
+for i = 1:1:Q
+    sigma(:,:,i) = diag(ones(1,12)*0.2);
+end
+transmat = ones(Q,Q);
+st = 50; % the self transition factor, with larger value yields stronger smoothy.
+for i = 1:1:Q
+    transmat(i,i) = transmat(i,i)*st;
+end
+transmat = mk_stochastic(transmat);
+
+bnet.CPD{1} = tabular_CPD(bnet, 1, prior); % uniform distribution for prior
+bnet.CPD{2} = gaussian_CPD(bnet, 2, 'mean', mu, 'cov', sigma); % gaussian emission probs
+bnet.CPD{3} = tabular_CPD(bnet, 3, transmat); % a reasonable transition matrix
+
+jengine = smoother_engine(jtree_2TBN_inf_engine(bnet));
+T = 10;
+ev = sample_dbn(bnet, T);
+evidence = cell(ss,T);
+evidence(onodes,:) = ev(onodes, :); % all cells besides onodes are empty
+[jengine,llj] = enter_evidence(jengine, evidence);
+i = 1; t = 5;
+mj = marginal_nodes(jengine, i, t);
+display(mj.T);
+mpe = find_mpe(jengine, evidence);
+display(mpe);
+display(ev);
+
+
+
+
+
+
