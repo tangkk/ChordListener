@@ -1,6 +1,6 @@
 % this implements the machine listening method for catching every chord
 % and chord boundary within a piece of music
-% note that the first part of this algorithm reimplements the work by
+% note that part of this algorithm reimplements the work by
 % M. Mauch - Mauch, M. (2010). Automatic chord transcription from audio using
 % computational models of musical context (Doctoral dissertation,
 % School of Electronic Engineering and Computer Science Queen Mary, University of London).
@@ -224,22 +224,31 @@ notenames = {'A','A#','B','C','C#','D','D#','E','F','F#','G','G#'};
 sizeCh = size(chromagram);
 p = 1:sizeCh(1);
 k = 1:sizeCh(2);
+T = sizeS(2); % the total number of time slices contained in the evidence
+t = ((hopsize/fs)*(1:T));
+plotsize = 1:100;
 sfactor = 0.2;
+% figure;
+% image(t(plotsize),p,sfactor*chromagram(:,plotsize));
+% set(gca,'YDir','normal');
+% set(gca, 'YTick',1:12, 'YTickLabel', notenames);
+% title('chromagram');
+% xlabel('time(s)');
+% ylabel('pitch class');
+% figure;
+% image(t(plotsize),p,sfactor*basschromagram(:,plotsize));
+% set(gca,'YDir','normal');
+% set(gca, 'YTick',1:12, 'YTickLabel', notenames);
+% title('basschromagram');
+% xlabel('time(s)');
+% ylabel('pitch class');
 figure;
-image(k,p,sfactor*chromagram);
-set(gca,'YDir','normal');
-set(gca, 'YTick',1:12, 'YTickLabel', notenames);
-title('chromagram');
-figure;
-image(k,p,sfactor*basschromagram);
-set(gca,'YDir','normal');
-set(gca, 'YTick',1:12, 'YTickLabel', notenames);
-title('basschromagram');
-figure;
-image(k,p,sfactor*treblechromagram);
+image(t(plotsize),p,sfactor*treblechromagram(:,plotsize));
 set(gca,'YDir','normal');
 set(gca, 'YTick',1:12, 'YTickLabel', notenames);
 title('treblechromagram');
+xlabel('time(s)');
+ylabel('pitch class');
 
 % normalize the chromagrams
 for i = 1:1:sizeS(2)
@@ -299,27 +308,61 @@ bnet = mk_dbn(intra, inter, ns, 'discrete', dnodes, 'observed', onodes, 'eclass1
 % let's order the pitch classes in such way:
 % 1 2  3 4  5 6 7  8 9  10 11 12
 % C C# D D# E F F# G G# A  A# B
+
+% prior probabilities
 prior = normalise(ones(1,Q));
+% emission probabilities
 mu = zeros(O,Q);
 sigma = zeros(O,O,Q);
+mu(:,Q) = ones(1,12);
 for i = 1:1:12
     muimaj = zeros(1,12);
     muimin = zeros(1,12);
-    muimaj(i) = 1;
+    muimaj(mod(i+0-1,12)+1) = 1;
+    muimaj(mod(i+2-1,12)+1) = 1;
     muimaj(mod(i+4-1,12)+1) = 1;
     muimaj(mod(i+7-1,12)+1) = 1;
     muimin(i) = 1;
+    muimin(mod(i+0-1,12)+1) = 1;
     muimin(mod(i+3-1,12)+1) = 1;
     muimin(mod(i+7-1,12)+1) = 1;
     mu(:,i) = muimaj;
     mu(:,i+12) = muimin;
 end
-mu(:,Q) = ones(1,12);
 for i = 1:1:Q
-    sigma(:,:,i) = diag(ones(1,12)*0.2);
+    % set miu for maj treble
+    if i >= 1 && i <= 12
+        sigmai = diag(ones(1,12));
+        for j = 1:1:12
+            if j == mod(i+2-1,12)+1 % set a weak II
+                sigmai(:,j) = sigmai(:,j) * 0.5;
+            elseif j == mod(i+0-1,12)+1 || j == mod(i+4-1,12)+1 || j == mod(i+7-1,12)+1 % set a strong I III V
+                sigmai(:,j) = sigmai(:,j) * 0.2;
+            else
+                sigmai(:,j) = sigmai(:,j) * 50; % others takes no effect
+            end
+        end
+        sigma(:,:,i) = sigmai;
+    end
+    % set miu for min treble
+    if i >= 13 && i <= 24
+        sigmai = diag(ones(1,12));
+        for j = 1:1:12
+            if j == mod(i+0-1,12)+1 || j == mod(i+3-1,12)+1 || j == mod(i+7-1,12)+1 % set a strong I bIII V
+                sigmai(:,j) = sigmai(:,j) * 0.2;
+            else
+                sigmai(:,j) = sigmai(:,j) * 50; % others takes no effect
+            end
+        end
+        sigma(:,:,i) = sigmai;
+    end
+    if i == 25
+        sigma(:,:,i) = diag(ones(1,12))*0.1; % must exactly almost all ones to infer no chord
+    end
 end
+% transition probabilities
 transmat = ones(Q,Q);
-st = 10; % the self transition factor, with larger value yields stronger smoothy.
+st = 20; % the self transition factor, with larger value yields stronger smoothy.
 for i = 1:1:Q
     transmat(i,i) = transmat(i,i)*st;
 end
@@ -330,7 +373,6 @@ bnet.CPD{2} = gaussian_CPD(bnet, 2, 'mean', mu, 'cov', sigma); % gaussian emissi
 bnet.CPD{3} = tabular_CPD(bnet, 3, transmat); % a reasonable transition matrix
 
 jengine = smoother_engine(jtree_2TBN_inf_engine(bnet));
-T = sizeS(2); % the total number of time slices contained in the evidence
 evidence = cell(ss,T);
 % use real evidence from chromagram
 for i = 1:1:T
@@ -340,10 +382,12 @@ for i = 1:1:T
 end
 [jengine,llj] = enter_evidence(jengine, evidence);
 mpe = find_mpe(jengine, evidence);
-display(mpe(1,1:50));
 
+figure;
+plot(t(plotsize),cell2mat(mpe(1,plotsize)));
+title('treble progression');
+xlabel('time(s)');
+ylabel('pitch class');
+display(mpe(1,plotsize));
 
-
-
-
-
+sound(x(1:hopsize*length(plotsize)),fs);
