@@ -297,7 +297,7 @@ cnodes = 2;
 eclass1 = [1 2];
 eclass2 = [3 2];
 eclass = [eclass1 eclass2];
-% consider the maj min treble model, as well as power treble model, there are totally 36 treble  + 1 no-treble
+% consider the maj min treble model, as well as sus2 and power treble model
 Q = 37;
 % 12 pitch-classes, each treble has a mean and cov for each pitch class
 O = 12;
@@ -307,7 +307,9 @@ bnet = mk_dbn(intra, inter, ns, 'discrete', dnodes, 'observed', onodes, 'eclass1
 % let's order the trebles in such way:
 % 1 2  3 4  5 6 7  8 9  10 11 12 13 14  15 16  17 18 19  20 21  22 23  24
 % C C# D D# E F F# G G# A  A# B  Cm C#m Dm D#m Em Fm F#m Gm G#m Am A#m Bm
-% 25 26  27 28  29 30 31  32 33  34  35  36 37
+% 25 26  27 28  29 30 31  32 33  34  35  36 (37)
+% C2 C#2 D2 D#2 E2 F2 F#2 G2 G#2 A2  A#2 B2 N
+% 37 38  39 40  41 42 43  44 45  46  47  48 49
 % C5 C#5 D5 D#5 E5 F5 F#5 G5 G#5 A5  A#5 B5 N
 % let's order the pitch classes in such way:
 % 1 2  3 4  5 6 7  8 9  10 11 12
@@ -321,72 +323,41 @@ sigma = zeros(O,O,Q);
 for i = 1:1:12
     muimaj = zeros(1,12);
     muimin = zeros(1,12);
+    mui2 = zeros(1,12);
     mui5 = zeros(1,12);
     
+    % major treble
     muimaj(mod(i+0-1,12)+1) = 1;
     muimaj(mod(i+4-1,12)+1) = 1;
     muimaj(mod(i+7-1,12)+1) = 1;
     
+    % minor treble
     muimin(mod(i+0-1,12)+1) = 1;
     muimin(mod(i+3-1,12)+1) = 1;
     muimin(mod(i+7-1,12)+1) = 1;
     
+    % sus2 treble
+    mui2(mod(i+0-1,12)+1) = 1;
+    mui2(mod(i+2-1,12)+1) = 1;
+    mui2(mod(i+7-1,12)+1) = 1;
+    
+    % power treble
     mui5(mod(i+0-1,12)+1) = 1;
     mui5(mod(i+7-1,12)+1) = 1;
     
     mu(:,i) = muimaj;
     mu(:,i+12) = muimin;
-    mu(:,i+24) = mui5;
+    mu(:,i+24) = mui2;
+%     mu(:,i+36) = mui5;
 end
 mu(:,Q) = ones(1,12); % the last one is no-treble
 for i = 1:1:Q
     sigma(:,:,i) = diag(ones(1,12))*0.2;
 end
-% for i = 1:1:Q
-%     % set sigma for maj treble
-%     if i >= 1 && i <= 12
-%         sigmai = diag(ones(1,12));
-%         for j = 1:1:12
-%             if j == mod(i+0-1,12)+1 || j == mod(i+4-1,12)+1 || j == mod(i+7-1,12)+1 % set a strong I III V
-%                 sigmai(:,j) = sigmai(:,j) * 0.2;
-%             else
-%                 sigmai(:,j) = sigmai(:,j) * 50; % others takes no effect
-%             end
-%         end
-%         sigma(:,:,i) = sigmai;
-%     end
-%     % set sigma for min treble
-%     if i >= 13 && i <= 24
-%         sigmai = diag(ones(1,12));
-%         for j = 1:1:12
-%             if j == mod(i+0-1,12)+1 || j == mod(i+3-1,12)+1 || j == mod(i+7-1,12)+1 % set a strong I bIII V
-%                 sigmai(:,j) = sigmai(:,j) * 0.2;
-%             else
-%                 sigmai(:,j) = sigmai(:,j) * 50; % others takes no effect
-%             end
-%         end
-%         sigma(:,:,i) = sigmai;
-%     end
-%     % set sigma for power treble
-%     if i >= 25 && i <= 36
-%         sigmai = diag(ones(1,12));
-%         for j = 1:1:12
-%             if j == mod(i+0-1,12)+1 || j == mod(i+7-1,12)+1 % set a strong I V
-%                 sigmai(:,j) = sigmai(:,j) * 0.2;
-%             else
-%                 sigmai(:,j) = sigmai(:,j) * 50; % others takes no effect
-%             end
-%         end
-%         sigma(:,:,i) = sigmai;
-%     end
-%     if i == Q
-%         sigma(:,:,i) = diag(ones(1,12))*0.1; % must exactly almost all ones to infer no chord
-%     end
-% end
 
 % transition probabilities
 transmat = ones(Q,Q);
-st = 20; % the self transition factor, with larger value yields stronger smoothy.
+st = 30; % the self transition factor, with larger value yields stronger smoothy.
 for i = 1:1:Q
     transmat(i,i) = transmat(i,i)*st;
 end
@@ -409,8 +380,10 @@ mpe = find_mpe(jengine, evidence);
 
 treblenames = {'C','C#','D','D#','E','F','F#','G','G#','A','A#','B',...
     'Cm','C#m','Dm','D#m','Em','Fm','F#m','Gm','G#m','Am','A#m','Bm',...
-    'C5','C#5','D5','D#5','E5','F5','F#5','G5','G#5','A5','A#5','B5',...
+    'C2','C#2','D2','D#2','E2','F2','F#2','G2','G#2','A2','A#2','B2',...
     'N'};
+%     'C5','C#5','D5','D#5','E5','F5','F#5','G5','G#5','A5','A#5','B5',...
+
 figure;
 plot(t(plotsize),cell2mat(mpe(1,plotsize)));
 title('treble progression');

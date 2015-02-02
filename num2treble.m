@@ -54,29 +54,29 @@ switch num
     case 24
         treble = 'Bm';
     case 25
-        treble = 'C5';
+        treble = 'C2';
     case 26
-        treble = 'C#5';
+        treble = 'C#2';
     case 27
-        treble = 'D5';
+        treble = 'D2';
     case 28
-        treble = 'D#5';
+        treble = 'D#2';
     case 29
-        treble = 'E5';
+        treble = 'E2';
     case 30
-        treble = 'F5';
+        treble = 'F2';
     case 31
-        treble = 'F#5';
+        treble = 'F#2';
     case 32
-        treble = 'G5';
+        treble = 'G2';
     case 33
-        treble = 'G#5';
+        treble = 'G#2';
     case 34
-        treble = 'A5';
+        treble = 'A2';
     case 35
-        treble = 'A#5';
+        treble = 'A#2';
     case 36
-        treble = 'B5';
+        treble = 'B2';
     case 37
         treble = 'N';
 end
