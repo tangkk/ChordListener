@@ -24,6 +24,7 @@ len = length(x);
 % play(player);
 
 % implement a size 4096 hamming windowed, hop size 512 STFT spectrogram
+% with sample rate 11025, each hop's duration is 0.0464s = 46.4399ms
 wl = 4096;
 w = hamming(wl);
 hopsize = 512;
@@ -41,7 +42,7 @@ for i = wl/2+1:hopsize:len - wl/2
     idx = idx + 1;
 end
 f = fs/2*linspace(0,1,wl/2);
-k = (1/fs)*(1:len);
+% k = (1/fs)*(1:len);
 % image(k,f,X);
 % set(gca,'YDir','normal');
 
@@ -280,10 +281,10 @@ eclass1 = [1 2];
 eclass2 = [3 2];
 eclass = [eclass1 eclass2];
 % consider the maj min treble model, as well as sus2 and power treble model
-Q = 37;
+Qt = 37;
 % 12 pitch-classes, each treble has a mean and cov for each pitch class
 O = 12;
-ns = [Q O];
+ns = [Qt O];
 bnet = mk_dbn(intra, inter, ns, 'discrete', dnodes, 'observed', onodes, 'eclass1', eclass1, 'eclass2', eclass2);
 % set CPDs: CPD{1} <- prior; CPD{2} <- emission; CPD{3} <- transition
 % let's order the trebles in such way:
@@ -298,10 +299,10 @@ bnet = mk_dbn(intra, inter, ns, 'discrete', dnodes, 'observed', onodes, 'eclass1
 % C C# D D# E F F# G G# A  A# B
 
 % prior probabilities
-prior = normalise(ones(1,Q));
+prior = normalise(ones(1,Qt));
 % emission probabilities
-mu = zeros(O,Q);
-sigma = zeros(O,O,Q);
+mu = zeros(O,Qt);
+sigma = zeros(O,O,Qt);
 for i = 1:1:12
     muimaj = zeros(1,12);
     muimin = zeros(1,12);
@@ -332,15 +333,15 @@ for i = 1:1:12
     mu(:,i+24) = mui2;
 %     mu(:,i+36) = mui5;
 end
-mu(:,Q) = ones(1,12); % the last one is no-treble
-for i = 1:1:Q
+mu(:,Qt) = ones(1,12); % the last one is no-treble
+for i = 1:1:Qt
     sigma(:,:,i) = diag(ones(1,12))*0.2;
 end
 
 % transition probabilities
-transmat = ones(Q,Q);
-st = 30; % the self transition factor, with larger value yields stronger smoothy.
-for i = 1:1:Q
+transmat = ones(Qt,Qt);
+st = 50; % the self transition factor, with larger value yields stronger smoothy.
+for i = 1:1:Qt
     transmat(i,i) = transmat(i,i)*st;
 end
 transmat = mk_stochastic(transmat);
@@ -372,6 +373,7 @@ title('treble progression');
 xlabel('time(s)');
 ylabel('treble');
 set(gca, 'YTick',1:length(treblenames), 'YTickLabel', treblenames);
+display('treble mpe');
 display(mpe(1,plotsize));
 
 % ******************************************* %
@@ -389,35 +391,35 @@ eclass1 = [1 2];
 eclass2 = [3 2];
 eclass = [eclass1 eclass2];
 % consider the bass C, C#, ... B as well as N
-Q = 13;
+Qb = 13;
 % 12 pitch-classes, each treble has a mean and cov for each pitch class
 O = 12;
-ns = [Q O];
+ns = [Qb O];
 bnet = mk_dbn(intra, inter, ns, 'discrete', dnodes, 'observed', onodes, 'eclass1', eclass1, 'eclass2', eclass2);
 % set CPDs: CPD{1} <- prior; CPD{2} <- emission; CPD{3} <- transition
 % let's order the basses in such way:
 % 1 2  3 4  5 6 7  8 9  10 11 12 13
 % C C# D D# E F F# G G# A  A# B  N
 % prior probabilities
-prior = normalise(ones(1,Q));
+prior = normalise(ones(1,Qb));
 % emission probabilities
-mu = zeros(O,Q);
-sigma = zeros(O,O,Q);
+mu = zeros(O,Qb);
+sigma = zeros(O,O,Qb);
 for i = 1:1:12
     mubass = zeros(1,12);
     mubass(i) = 1;
     mu(:,i) = mubass;
 end
-mu(:,Q) = ones(1,12); % the last one is no-bass
+mu(:,Qb) = ones(1,12); % the last one is no-bass
 
-for i = 1:1:Q
+for i = 1:1:Qb
     sigma(:,:,i) = diag(ones(1,12))*0.2;
 end
 
 % transition probabilities
-transmat = ones(Q,Q);
-st = 30; % the self transition factor, with larger value yields stronger smoothy.
-for i = 1:1:Q
+transmat = ones(Qb,Qb);
+st = 50; % the self transition factor, with larger value yields stronger smoothy.
+for i = 1:1:Qb
     transmat(i,i) = transmat(i,i)*st;
 end
 transmat = mk_stochastic(transmat);
@@ -446,7 +448,78 @@ title('bass progression');
 xlabel('time(s)');
 ylabel('bass');
 set(gca, 'YTick',1:length(bassnames), 'YTickLabel', bassnames);
+display('bass mpe');
 display(mpeb(1,plotsize));
+
+% ******************************************* %
+% chord model
+lenChord = length(mpe);
+chordprogression = cell(1,lenChord);
+for i = 1:1:lenChord
+    % simply print slash chords except for maj, min
+    tnum = mpe{1,i};
+    bnum = mpeb{1,i};
+    % map sus2 to maj
+    if tnum >= 25 && tnum <= 36
+        tnum = tnum - 24;
+    end
+    tname = num2treble(tnum);
+    bname = num2bass(bnum);
+    if tnum == Qt || bnum == Qb
+        chordprogression{1,i} = 'N';
+    elseif mod(tnum - 1,12) + 1 == bnum
+        chordprogression{1,i} = tname;
+    else
+        chordprogression{1,i} = [tname '/' bname];
+    end
+end
+display('chord progression');
+display(chordprogression(1,plotsize));
+
+lenChordPrint = 100;
+chordprint = cell(2,lenChordPrint);
+oldchord = chordprogression{1,1};
+chordcount = 1;
+chordidx = 1;
+st = 10;
+for i = 2:1:lenChord
+    newchord = chordprogression{1,i};
+    if strcmp(newchord,oldchord) == 1
+        chordcount = chordcount + 1;
+    else
+        if chordcount <= st && chordidx > 1
+            tmp = chordprint(:,chordidx - 1);
+            tmp{2} = tmp{2} + chordcount;
+            chordprint(:,chordidx - 1) = tmp;
+            chordcount = 1;
+        else
+            chordprint(:,chordidx) = {oldchord, chordcount};
+            chordidx = chordidx + 1;
+            chordcount = 1;
+        end
+    end
+    oldchord = newchord;
+end
+display('chordprint');
+display(chordprint);
+
+% write results
+fw = fopen([audio(1:end-4) '.txt'],'w');
+formatSpec1 = '%s';
+formatSpec2 = '%s\n';
+sumhop = 1;
+for i = 1:1:lenChordPrint
+    if ~isempty(chordprint{2,i})
+        s = [chordprint{1,i} '===>' num2str(t(sumhop))];
+        fprintf(fw, formatSpec1, s);
+        sumhop = sumhop + chordprint{2,i};
+        s = ['-' num2str(t(sumhop))];
+        fprintf(fw, formatSpec2, s);
+    else
+        break;
+    end
+end
+fclose(fw);
 
 % ******************************************* %
 % play sound
