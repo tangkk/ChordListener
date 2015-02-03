@@ -53,7 +53,9 @@ fratio = 2^(1/36);
 numtones = 72*3;
 Ms = zeros(numtones, wl/2); % simple tone profiles
 Mc = zeros(numtones, wl/2); % complex tone profiles
-% the true frequency of the tone is supposed to lie on bin midinum*3-1
+% the true frequency of the tone is supposed to lie on bin notenum*3-1,
+% e.g. A4 is bin 49*3-1 = 146, C4 is bin 40*3-1 = 119 (note that notenum is
+% not midinum, note num is the index of the key on a piano with A0 = 1)
 for toneidx = 1:1:numtones
     ftone = fmin*(fratio^(toneidx-2));
     stone = sin(2*pi*(1:wl)*ftone/fs).*w';
@@ -87,6 +89,7 @@ sizeX = size(X);
 % set(gca,'YDir','normal');
 
 % calculate running mean and runnind std matrix for every column
+% TODO: this module is computation non-efficient
 sizeSpre = size(Sc);
 rmeanS = zeros(sizeSpre);
 rstdS = zeros(sizeSpre);
@@ -100,14 +103,13 @@ for j = 1:1:sizeSpre(2)
         wmean = max(i-8,1):min(i+9,sizeSpre(1));
         rmeanS(i,j) = mean(colS(wmean));
         rmeanC(i,j) = mean(colC(wmean));
-%         rstdS(i,j) = std(colS(wmean));
+%         rstdS(i,j) = std(colS(wmean)); % TODO: how can I include this?
 %         rstdC(i,j) = std(colC(wmean));
     end
 end
 
 % compute preliminary salience matrix
 Spre = Ss.*Sc;
-
 for i = 1:1:sizeSpre(1)
     for j = 1:1:sizeSpre(2)
         if Ss(i,j) < rmeanS(i,j) || Sc(i,j) < rmeanC(i,j)
@@ -115,58 +117,30 @@ for i = 1:1:sizeSpre(1)
         end
     end
 end
-% p = 1:sizeSpre(1);
-% k = 1:sizeSpre(2);
-% figure;
-% image(k,p,Spre);
-% set(gca,'YDir','normal');
-% title('preliminary salience matrix');
+sfactor = 100;
+p = 1:sizeSpre(1);
+k = 1:sizeSpre(2);
+figure;
+image(k,p,sfactor*Spre);
+set(gca,'YDir','normal');
+title('preliminary salience matrix');
 
-% % tuning algorithm (this algorithm seems to be unreliable)
-% Sbar = (sum(Spre,2))/sizeSpre(2); % first sum over all time frames
-% fftSbar = fft(Sbar, 2^nextpow2(sizeSpre(1)));
-% lenfftSbar = length(fftSbar);
-% tuningpoint = lenfftSbar/6;
-% phi = angle(fftSbar(floor(tuningpoint)))*(tuningpoint - floor(tuningpoint))...
-%     + angle(fftSbar(ceil(tuningpoint)))*(ceil(tuningpoint) - tuningpoint); % take the angle at pi/3
-% d = - phi - 2*pi/3; % wrap d in [-pi,pi)
-% if d < -pi
-%     d = d + 2*pi;
-% end
-% if d > pi
-%     d = d - 2*pi;
-% end
-% d = d / (2*pi);
-% tau = 440*2^(d/12);
-% if d < 0
-%     for j = 1:1:sizeSpre(2)
-%         col = Spre(:,j);
-%         for i = 2:1:sizeSpre(1)
-%             % do interpolation here
-%             Spre(i,j) = -d*col(i-1) + (1+d)*col(i);
-%         end
-%     end
-% else
-%     for j = 1:1:sizeSpre(2)
-%         col = Spre(:,j);
-%         for i = 1:1:sizeSpre(1) - 1
-%             % do interpolation here
-%             Spre(i,j) = (1-d)*col(i) + d*col(i+1);
-%         end
-%     end
-% end
-sfactor = 1000;
+% tuning - have little effect for common commercial songs, add later
+% my tuning consider only Sbar = (sum(Spre,2))/sizeSpre(2);
+% and see if the location of peaks different from correct values
+
 S = zeros(sizeSpre(1)/3, sizeSpre(2));
 for i = 1:3:sizeSpre(1)
     for j = 1:1:sizeSpre(2)
-        S((i+2)/3,j) = sfactor*(Spre(i,j) + Spre(i+1,j) + Spre(i+2,j));
+        S((i+2)/3,j) = (Spre(i,j) + Spre(i+1,j) + Spre(i+2,j));
     end
 end
+sfactor = 100;
 sizeS = size(S);
 p = 1:sizeS(1);
 k = 1:sizeS(2);
 figure;
-image(k,p,S);
+image(k,p,sfactor*S);
 set(gca,'YDir','normal');
 title('note salience matrix');
 
@@ -220,35 +194,6 @@ for i = 1:1:12
         treblechromagram(i,:) = treblechromagram(i,:) + S(i + 12*(k-1),:)*gt(i + 12*(k-1));
     end
 end
-notenames = {'A','A#','B','C','C#','D','D#','E','F','F#','G','G#'};
-sizeCh = size(chromagram);
-p = 1:sizeCh(1);
-k = 1:sizeCh(2);
-T = sizeS(2); % the total number of time slices contained in the evidence
-t = ((hopsize/fs)*(1:T));
-plotsize = 1:100;
-sfactor = 0.2;
-% figure;
-% image(t(plotsize),p,sfactor*chromagram(:,plotsize));
-% set(gca,'YDir','normal');
-% set(gca, 'YTick',1:12, 'YTickLabel', notenames);
-% title('chromagram');
-% xlabel('time(s)');
-% ylabel('pitch class');
-% figure;
-% image(t(plotsize),p,sfactor*basschromagram(:,plotsize));
-% set(gca,'YDir','normal');
-% set(gca, 'YTick',1:12, 'YTickLabel', notenames);
-% title('basschromagram');
-% xlabel('time(s)');
-% ylabel('pitch class');
-figure;
-image(t(plotsize),p,sfactor*treblechromagram(:,plotsize));
-set(gca,'YDir','normal');
-set(gca, 'YTick',1:12, 'YTickLabel', notenames);
-title('treblechromagram');
-xlabel('time(s)');
-ylabel('pitch class');
 
 % normalize the chromagrams
 for i = 1:1:sizeS(2)
@@ -256,6 +201,43 @@ for i = 1:1:sizeS(2)
     treblechromagram(:,i) = treblechromagram(:,i) / max(treblechromagram(:,i));
     basschromagram(:,i) = basschromagram(:,i) / max(basschromagram(:,i));
 end
+
+% low-cut chromagrams
+lowT = 0.1;
+chromagram(chromagram < lowT) = 0;
+treblechromagram(treblechromagram < lowT) = 0;
+basschromagram(basschromagram < lowT) = 0;
+
+% plot chromagrams
+notenames = {'A','A#','B','C','C#','D','D#','E','F','F#','G','G#'};
+sizeCh = size(chromagram);
+p = 1:sizeCh(1);
+k = 1:sizeCh(2);
+T = sizeS(2); % the total number of time slices contained in the evidence
+t = ((hopsize/fs)*(1:T));
+plotsize = 1:100;
+sfactor = 100;
+% figure;
+% image(t(plotsize),p,sfactor*chromagram(:,plotsize));
+% set(gca,'YDir','normal');
+% set(gca, 'YTick',1:12, 'YTickLabel', notenames);
+% title('chromagram');
+% xlabel('time(s)');
+% ylabel('pitch class');
+figure;
+image(t(plotsize),p,sfactor*basschromagram(:,plotsize));
+set(gca,'YDir','normal');
+set(gca, 'YTick',1:12, 'YTickLabel', notenames);
+title('basschromagram');
+xlabel('time(s)');
+ylabel('pitch class');
+figure;
+image(t(plotsize),p,sfactor*treblechromagram(:,plotsize));
+set(gca,'YDir','normal');
+set(gca, 'YTick',1:12, 'YTickLabel', notenames);
+title('treblechromagram');
+xlabel('time(s)');
+ylabel('pitch class');
 
 % try some DBN models for,
 % chord progression inference,
@@ -392,4 +374,80 @@ ylabel('treble');
 set(gca, 'YTick',1:length(treblenames), 'YTickLabel', treblenames);
 display(mpe(1,plotsize));
 
+% ******************************************* %
+% bass model
+ss = 2;
+intra = zeros(ss);
+intra(1,2) = 1;
+inter = zeros(ss);
+inter(1,1) = 1;
+hnodes = 1;
+onodes = 2;
+dnodes = 1;
+cnodes = 2;
+eclass1 = [1 2];
+eclass2 = [3 2];
+eclass = [eclass1 eclass2];
+% consider the bass C, C#, ... B as well as N
+Q = 13;
+% 12 pitch-classes, each treble has a mean and cov for each pitch class
+O = 12;
+ns = [Q O];
+bnet = mk_dbn(intra, inter, ns, 'discrete', dnodes, 'observed', onodes, 'eclass1', eclass1, 'eclass2', eclass2);
+% set CPDs: CPD{1} <- prior; CPD{2} <- emission; CPD{3} <- transition
+% let's order the basses in such way:
+% 1 2  3 4  5 6 7  8 9  10 11 12 13
+% C C# D D# E F F# G G# A  A# B  N
+% prior probabilities
+prior = normalise(ones(1,Q));
+% emission probabilities
+mu = zeros(O,Q);
+sigma = zeros(O,O,Q);
+for i = 1:1:12
+    mubass = zeros(1,12);
+    mubass(i) = 1;
+    mu(:,i) = mubass;
+end
+mu(:,Q) = ones(1,12); % the last one is no-bass
+
+for i = 1:1:Q
+    sigma(:,:,i) = diag(ones(1,12))*0.2;
+end
+
+% transition probabilities
+transmat = ones(Q,Q);
+st = 30; % the self transition factor, with larger value yields stronger smoothy.
+for i = 1:1:Q
+    transmat(i,i) = transmat(i,i)*st;
+end
+transmat = mk_stochastic(transmat);
+
+bnet.CPD{1} = tabular_CPD(bnet, 1, prior); % uniform distribution for prior
+bnet.CPD{2} = gaussian_CPD(bnet, 2, 'mean', mu, 'cov', sigma); % gaussian emission probs
+bnet.CPD{3} = tabular_CPD(bnet, 3, transmat); % a reasonable transition matrix
+
+jengine = smoother_engine(jtree_2TBN_inf_engine(bnet));
+evidence = cell(ss,T);
+% use real evidence from chromagram
+for i = 1:1:T
+    ev = basschromagram(:,i);
+    ev = [ev(4:end) ; ev(1:3)]; % rearrange so that C is at the bottom
+    evidence(onodes,i) = num2cell(ev,1);
+end
+[jengine,llj] = enter_evidence(jengine, evidence);
+mpeb = find_mpe(jengine, evidence);
+
+bassnames = {'C','C#','D','D#','E','F','F#','G','G#','A','A#','B',...
+    'N'};
+
+figure;
+plot(t(plotsize),cell2mat(mpeb(1,plotsize)));
+title('bass progression');
+xlabel('time(s)');
+ylabel('bass');
+set(gca, 'YTick',1:length(bassnames), 'YTickLabel', bassnames);
+display(mpeb(1,plotsize));
+
+% ******************************************* %
+% play sound
 sound(x(1:hopsize*length(plotsize)),fs);
