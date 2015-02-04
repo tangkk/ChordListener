@@ -28,7 +28,8 @@ len = length(x);
 wl = 4096;
 w = hamming(wl);
 hopsize = 512;
-X = zeros(wl/2, ceil((length(x)-wl)/hopsize));
+lenSlice = ceil((length(x)-wl)/hopsize);
+X = zeros(wl/2, lenSlice);
 idx = 1;
 for i = wl/2+1:hopsize:len - wl/2
     raws = i-wl/2;
@@ -74,6 +75,13 @@ for toneidx = 1:1:numtones
     Mc(toneidx,:) = fftctone;
 end
 
+% % *************** Test NNLS chroma ************%
+% nnlschroma = zeros(numtones, lenSlice);
+% for i = 1:1:lenSlice
+%     display(i);
+%     nnlschroma(:,i) = lsqnonneg(Mc', X(:,i));
+% end
+
 % calculate note salience matrix of the stft spectrogram (cosine
 % similarity)
 Ss = Ms*X;
@@ -88,6 +96,51 @@ sizeX = size(X);
 % figure;
 % image(k,p,Sc);
 % set(gca,'YDir','normal');
+
+% % *************** Test NNLS chroma ************%
+% % build the tone profiles for calculating note salience matrix
+% % each sinusoidal at frequency 'ftone' is generated via sin(2*pi*n*f/fs)
+% % try nnls method on Ss
+% fmin = 27.5; % MIDI note 21
+% fmax = 1661; % MIDI note 92
+% fratio = 2^(1/36);
+% numtonesn = 256;
+% wln = 512;
+% wn = hamming(wln);
+% Msn = zeros(numtonesn, wln/2); % simple tone profiles
+% Mcn = zeros(numtonesn, wln/2); % complex tone profiles
+% % the true frequency of the tone is supposed to lie on bin notenum*3-1,
+% % e.g. A4 is bin 49*3-1 = 146, C4 is bin 40*3-1 = 119 (note that notenum is
+% % not midinum, note num is the index of the key on a piano with A0 = 1)
+% for toneidx = 1:1:numtonesn
+%     ftone = fmin*(fratio^(toneidx-2));
+%     stone = sin(2*pi*(1:wln)*ftone/fs).*wn';
+%     ctone = (0.9*sin(2*pi*(1:wln)*ftone/fs) + 0.9^2*sin(2*pi*(1:wln)*2*ftone/fs) + ...
+%         0.9^3*sin(2*pi*(1:wln)*3*ftone/fs) + 0.9^4*sin(2*pi*(1:wln)*4*ftone/fs)).*wn';
+%     
+%     ffttone = abs(fft(stone));
+%     ffttone = ffttone(1:wln/2);
+%     ffttone = ffttone / norm(ffttone,2);
+%     
+%     fftctone = abs(fft(ctone));
+%     fftctone = fftctone(1:wln/2);
+%     fftctone = fftctone / norm(fftctone,2);
+%     Msn(toneidx,:) = ffttone;
+%     Mcn(toneidx,:) = fftctone;
+% end
+% nnlschroma = zeros(numtonesn, lenSlice);
+% for i = 1:1:lenSlice
+%     display(i);
+%     nnlschroma(:,i) = lsqnonneg(Mcn', Ss(:,i));
+% end
+% sfactor = 1000;
+% sizennls = size(nnlschroma);
+% p = 1:sizennls(1);
+% k = 1:sizennls(2);
+% figure;
+% image(k,p,sfactor*nnlschroma);
+% set(gca,'YDir','normal');
+% title('nnls chroma');
 
 % calculate running mean and runnind std matrix for every column
 % TODO: this module is computation non-efficient
@@ -136,12 +189,62 @@ for i = 1:3:sizeSpre(1)
         S((i+2)/3,j) = (Spre(i,j) + Spre(i+1,j) + Spre(i+2,j));
     end
 end
-sfactor = 100;
 sizeS = size(S);
+% normalization
+for i = 1:1:sizeS(2)
+    S(:,i) = S(:,i) / max(S(:,i));
+end
+
+sfactor = 100;
 p = 1:sizeS(1);
 k = 1:sizeS(2);
 figure;
 image(k,p,sfactor*S);
+set(gca,'YDir','normal');
+title('note salience matrix');
+
+% gestalt filter (fill in signals that is automatically filled in by
+% humans)
+wg = 20;
+Sg = zeros(sizeS(1), sizeS(2));
+gesc = 0;
+gesct = 1;
+gest = 0.1;
+for i = 1:1:sizeS(1)
+    for j = wg/2:wg/2:sizeS(2)-wg/2
+        gesval = mean(S(i,j-wg/2+1:j+wg/2));
+        if gesval > gest && gesc >= gesct
+            Sg(i,j-wg/2+1:j+wg/2) = gesval;
+            gesc = gesc + 1;
+        elseif gesval > gest
+            gesc = gesc + 1;
+        else
+            gesc = 0;
+        end
+    end
+end
+figure;
+image(k,p,sfactor*Sg);
+set(gca,'YDir','normal');
+title('note salience matrix');
+
+% harmonic change filter
+Sh = zeros(sizeS(1), sizeS(2));
+for i = 1:1:sizeS(1)
+    for j = 2:1:sizeS(2)
+        hi = Sg(i,j) - Sg(i,j-1);
+        if hi > 0.1
+            Sh(i,j) = hi;
+        end
+    end
+end
+% for j = 1:1:sizeS(2)
+%     if sum(Sh(:,j)) > 0.5
+%         Sh(:,j) = ones(1, sizeS(1));
+%     end
+% end
+figure;
+image(k,p,sfactor*Sh);
 set(gca,'YDir','normal');
 title('note salience matrix');
 
@@ -216,7 +319,7 @@ p = 1:sizeCh(1);
 k = 1:sizeCh(2);
 T = sizeS(2); % the total number of time slices contained in the evidence
 t = ((hopsize/fs)*(1:T));
-plotsize = 1:100;
+plotsize = 1:T;
 sfactor = 100;
 % figure;
 % image(t(plotsize),p,sfactor*chromagram(:,plotsize));
@@ -340,7 +443,7 @@ end
 
 % transition probabilities
 transmat = ones(Qt,Qt);
-st = 50; % the self transition factor, with larger value yields stronger smoothy.
+st = 500; % the self transition factor, with larger value yields stronger smoothy.
 for i = 1:1:Qt
     transmat(i,i) = transmat(i,i)*st;
 end
@@ -418,7 +521,7 @@ end
 
 % transition probabilities
 transmat = ones(Qb,Qb);
-st = 50; % the self transition factor, with larger value yields stronger smoothy.
+st = 500; % the self transition factor, with larger value yields stronger smoothy.
 for i = 1:1:Qb
     transmat(i,i) = transmat(i,i)*st;
 end
@@ -455,10 +558,13 @@ display(mpeb(1,plotsize));
 % chord model
 lenChord = length(mpe);
 chordprogression = cell(1,lenChord);
+treblebassprogression = cell(2,lenChord);
 for i = 1:1:lenChord
     % simply print slash chords except for maj, min
     tnum = mpe{1,i};
     bnum = mpeb{1,i};
+    treblebassprogression{1,i} = num2treble(tnum);
+    treblebassprogression{2,i} = num2bass(bnum);
     % map sus2 to maj
     if tnum >= 25 && tnum <= 36
         tnum = tnum - 24;
@@ -476,6 +582,7 @@ end
 display('chord progression');
 display(chordprogression(1,plotsize));
 
+% smooth the chord progression
 lenChordPrint = 100;
 chordprint = cell(2,lenChordPrint);
 oldchord = chordprogression{1,1};
@@ -523,4 +630,11 @@ fclose(fw);
 
 % ******************************************* %
 % play sound
-sound(x(1:hopsize*length(plotsize)),fs);
+% sound(x(1:hopsize*length(plotsize)),fs);
+
+% sum = 0;
+% for i = 1:1:length(chordprint)
+%     if ~isempty(chordprint{2,i})
+%         sum = sum + chordprint{2,i};
+%     end
+% end
