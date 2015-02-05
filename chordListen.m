@@ -205,7 +205,7 @@ title('note salience matrix');
 
 % gestalt filter (fill in signals that is automatically filled in by
 % humans)
-wg = 20;
+wg = 10;
 Sg = zeros(sizeS(1), sizeS(2));
 gesc = 0;
 gesct = 1;
@@ -226,27 +226,58 @@ end
 figure;
 image(k,p,sfactor*Sg);
 set(gca,'YDir','normal');
-title('note salience matrix');
+title('note gestalt salience matrix');
 
-% harmonic change filter
-Sh = zeros(sizeS(1), sizeS(2));
+% onset filter (naively detect the note onsets)
+So = zeros(sizeS(1), sizeS(2));
 for i = 1:1:sizeS(1)
     for j = 2:1:sizeS(2)
         hi = Sg(i,j) - Sg(i,j-1);
         if hi > 0.1
-            Sh(i,j) = hi;
+            So(i,j) = hi;
         end
     end
 end
-% for j = 1:1:sizeS(2)
-%     if sum(Sh(:,j)) > 0.5
-%         Sh(:,j) = ones(1, sizeS(1));
-%     end
-% end
+figure;
+image(k,p,sfactor*So);
+set(gca,'YDir','normal');
+title('onset matrix');
+
+% harmonic change filter (detect harmonic change boundaries)
+Sh = zeros(sizeS(1),sizeS(2));
+bassbound = 30;
+ht = 0.2;
+whs = 1;
+whe = 1;
+for j = 1:1:sizeS(2)
+    for i = 1:1:bassbound
+        if So(i,j) > ht && j > 1 && j - whs > 10
+            % take the mean over the harmonic window in terms of row
+            whe = j-1;
+            wh = whs:whe;
+            for ii = 1:1:sizeS(1)
+                gesiiwh = mean(Sg(ii,wh));
+                if gesiiwh > 0.10
+                    Sh(ii,wh) = ones(1,length(wh))*gesiiwh;
+                end
+            end
+            % normalize the content within harmonic window in terms of col
+            for jj = whs:1:whe
+                tmp = Sh(:,jj);
+                tmp = tmp / max(tmp);
+                tmp(tmp < 0.2) = 0;
+                Sh(:,jj) = tmp;
+            end
+            Sh(:,whs) = ones(1,sizeS(1))'; % indicate the harmonic change
+            whs = j;
+            break;
+        end
+    end
+end
 figure;
 image(k,p,sfactor*Sh);
 set(gca,'YDir','normal');
-title('note salience matrix');
+title('harmonic bounded salience matrix');
 
 % compute bass and treble profiles (once for all time)
 gb = zeros(1,sizeS(1));
@@ -321,13 +352,13 @@ T = sizeS(2); % the total number of time slices contained in the evidence
 t = ((hopsize/fs)*(1:T));
 plotsize = 1:T;
 sfactor = 100;
-% figure;
-% image(t(plotsize),p,sfactor*chromagram(:,plotsize));
-% set(gca,'YDir','normal');
-% set(gca, 'YTick',1:12, 'YTickLabel', notenames);
-% title('chromagram');
-% xlabel('time(s)');
-% ylabel('pitch class');
+figure;
+image(t(plotsize),p,sfactor*chromagram(:,plotsize));
+set(gca,'YDir','normal');
+set(gca, 'YTick',1:12, 'YTickLabel', notenames);
+title('chromagram');
+xlabel('time(s)');
+ylabel('pitch class');
 figure;
 image(t(plotsize),p,sfactor*basschromagram(:,plotsize));
 set(gca,'YDir','normal');
