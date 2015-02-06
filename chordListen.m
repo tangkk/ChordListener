@@ -10,6 +10,7 @@ audio = 'tuihou-1.mp3';
 path = [root audio];
 close all;
 
+% ********************* Front End *************************** %
 [x,fs] = audioread(path);
 songinfo = audioinfo(path);
 DSR = fs / 11025;
@@ -268,7 +269,7 @@ for j = 1:1:sizeS(2)
                 tmp(tmp < 0.2) = 0;
                 Sh(:,jj) = tmp;
             end
-            Sh(:,whs) = ones(1,sizeS(1))'; % indicate the harmonic change
+%             Sh(:,whs) = ones(1,sizeS(1))'; % indicate the harmonic change
             whs = j;
             break;
         end
@@ -319,22 +320,29 @@ for i = 1:1:sizeS(1)
 end
 
 % compute the chromagram, bass chromagram and treble chromagram
+SS = Sh; % select the salience matrix to be used
 chromagram = zeros(12, sizeS(2));
 basschromagram = zeros(12, sizeS(2));
 treblechromagram = zeros(12, sizeS(2));
 for i = 1:1:12
     for k = 1:1:sizeS(1)/12
-        chromagram(i,:) = chromagram(i,:) + S(i + 12*(k-1),:)*gw(i + 12*(k-1));
-        basschromagram(i,:) = basschromagram(i,:) + S(i + 12*(k-1),:)*gb(i + 12*(k-1));
-        treblechromagram(i,:) = treblechromagram(i,:) + S(i + 12*(k-1),:)*gt(i + 12*(k-1));
+        chromagram(i,:) = chromagram(i,:) + SS(i + 12*(k-1),:)*gw(i + 12*(k-1));
+        basschromagram(i,:) = basschromagram(i,:) + SS(i + 12*(k-1),:)*gb(i + 12*(k-1));
+        treblechromagram(i,:) = treblechromagram(i,:) + SS(i + 12*(k-1),:)*gt(i + 12*(k-1));
     end
 end
 
 % normalize the chromagrams
 for i = 1:1:sizeS(2)
-    chromagram(:,i) = chromagram(:,i) / max(chromagram(:,i));
-    treblechromagram(:,i) = treblechromagram(:,i) / max(treblechromagram(:,i));
-    basschromagram(:,i) = basschromagram(:,i) / max(basschromagram(:,i));
+    if max(chromagram(:,i)) ~= 0
+        chromagram(:,i) = chromagram(:,i) / max(chromagram(:,i));
+    end
+    if max(treblechromagram(:,i)) ~= 0
+        treblechromagram(:,i) = treblechromagram(:,i) / max(treblechromagram(:,i));
+    end
+    if max(basschromagram(:,i)) ~= 0
+        basschromagram(:,i) = basschromagram(:,i) / max(basschromagram(:,i));
+    end
 end
 
 % low-cut chromagrams
@@ -374,7 +382,27 @@ title('treblechromagram');
 xlabel('time(s)');
 ylabel('pitch class');
 
-% try some DBN models for,
+% ********************* Back End *************************** %
+% try chord recognition tree method
+% the chord tree is built this way with priority from top to down
+% 1->3->5 maj
+% 1->3->5# aug
+% 1->3->7b dom7
+% 1->3->7 maj7
+% 1->3b->5 min
+% 1->3b->5b dim
+% 1->3b->6 maj/3
+% 1->3b->7b min7
+% 1->3b->7 minmaj7
+% 1->4->6 maj/5
+% 1->5->5 sus4
+% 1->2->5 sus2
+% run the bass through this tree, if hit, then that's the chord rooted
+% on the bass
+% if miss, then run every other pitch through this tree, pick a hit with
+% root closest to the bass to form a slash chord
+
+% try DBN models for,
 % chord progression inference,
 % based on,
 % chromagram observations.
@@ -624,6 +652,9 @@ for i = 2:1:lenChord
     newchord = chordprogression{1,i};
     if strcmp(newchord,oldchord) == 1
         chordcount = chordcount + 1;
+        if i == lenChord
+            chordprint(:,chordidx) = {oldchord, chordcount};
+        end
     else
         if chordcount <= st && chordidx > 1
             tmp = chordprint(:,chordidx - 1);
