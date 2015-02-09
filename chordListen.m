@@ -676,10 +676,14 @@ display(chordprint);
 fw = fopen([audio(1:end-4) '.txt'],'w');
 formatSpec1 = '%s';
 formatSpec2 = '%s\n';
-sumhop = 1;
+sumhop = 0;
 for i = 1:1:lenChordPrint
     if ~isempty(chordprint{2,i})
-        s = [chordprint{1,i} '===>' num2str(t(sumhop))];
+        if sumhop == 0
+            s = [chordprint{1,i} '===>' num2str(0)];
+        else
+            s = [chordprint{1,i} '===>' num2str(t(sumhop))];
+        end
         fprintf(fw, formatSpec1, s);
         sumhop = sumhop + chordprint{2,i};
         s = ['-' num2str(t(sumhop))];
