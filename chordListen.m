@@ -5,12 +5,17 @@
 % computational models of musical context (Doctoral dissertation,
 % School of Electronic Engineering and Computer Science Queen Mary, University of London).
 
+% ********************************************************** %
+% ********************* Input ****************************** %
+% ********************************************************** %
 root = '../AudioSamples/';
 audio = 'tuihou-1.mp3';
 path = [root audio];
 close all;
 
+% ********************************************************** %
 % ********************* Front End *************************** %
+% ********************************************************** %
 [x,fs] = audioread(path);
 songinfo = audioinfo(path);
 DSR = fs / 11025;
@@ -173,10 +178,10 @@ for i = 1:1:sizeSpre(1)
     end
 end
 sfactor = 100;
-p = 1:sizeSpre(1);
-k = 1:sizeSpre(2);
+pp = 1:sizeSpre(1);
+kk = 1:sizeSpre(2);
 figure;
-image(k,p,sfactor*Spre);
+image(kk,pp,sfactor*Spre);
 set(gca,'YDir','normal');
 title('preliminary salience matrix');
 
@@ -229,7 +234,7 @@ image(k,p,sfactor*Sg);
 set(gca,'YDir','normal');
 title('note gestalt salience matrix');
 
-% onset filter (naively detect the note onsets)
+% onset filter (roughly detect the note onsets)
 So = zeros(sizeS(1), sizeS(2));
 for i = 1:1:sizeS(1)
     for j = 2:1:sizeS(2)
@@ -246,10 +251,12 @@ title('onset matrix');
 
 % harmonic change filter (detect harmonic change boundaries)
 Sh = zeros(sizeS(1),sizeS(2));
+Shv = zeros(sizeS(1),sizeS(2)); % harmonic change matrix (one chord per col)
 bassbound = 30;
 ht = 0.2;
 whs = 1;
 whe = 1;
+shvidx = 1;
 for j = 1:1:sizeS(2)
     for i = 1:1:bassbound
         if So(i,j) > ht && j > 1 && j - whs > 10
@@ -269,16 +276,24 @@ for j = 1:1:sizeS(2)
                 tmp(tmp < 0.2) = 0;
                 Sh(:,jj) = tmp;
             end
-%             Sh(:,whs) = ones(1,sizeS(1))'; % indicate the harmonic change
+            % fill the harmonic change vector
+            Shv(:,shvidx) = Sh(:,whs);
+            shvidx = shvidx + 1;
             whs = j;
             break;
         end
     end
 end
+nchords = shvidx - 1;
+Shv = Shv(:,(1:nchords));
 figure;
 image(k,p,sfactor*Sh);
 set(gca,'YDir','normal');
 title('harmonic bounded salience matrix');
+figure;
+image(k(1:nchords),p,sfactor*Shv);
+set(gca,'YDir','normal');
+title('harmonic change matrix');
 
 % compute bass and treble profiles (once for all time)
 gb = zeros(1,sizeS(1));
@@ -325,23 +340,29 @@ chromagram = zeros(12, sizeS(2));
 basschromagram = zeros(12, sizeS(2));
 treblechromagram = zeros(12, sizeS(2));
 for i = 1:1:12
-    for k = 1:1:sizeS(1)/12
-        chromagram(i,:) = chromagram(i,:) + SS(i + 12*(k-1),:)*gw(i + 12*(k-1));
-        basschromagram(i,:) = basschromagram(i,:) + SS(i + 12*(k-1),:)*gb(i + 12*(k-1));
-        treblechromagram(i,:) = treblechromagram(i,:) + SS(i + 12*(k-1),:)*gt(i + 12*(k-1));
+    for kk = 1:1:sizeS(1)/12
+        chromagram(i,:) = chromagram(i,:) + SS(i + 12*(kk-1),:)*gw(i + 12*(kk-1));
+        basschromagram(i,:) = basschromagram(i,:) + SS(i + 12*(kk-1),:)*gb(i + 12*(kk-1));
+        treblechromagram(i,:) = treblechromagram(i,:) + SS(i + 12*(kk-1),:)*gt(i + 12*(kk-1));
     end
 end
 
-% normalize the chromagrams
+% normalize the chromagrams and transform them to C base
 for i = 1:1:sizeS(2)
     if max(chromagram(:,i)) ~= 0
         chromagram(:,i) = chromagram(:,i) / max(chromagram(:,i));
+        tmp = chromagram(:,i);
+        chromagram(:,i) = [tmp(4:end) ; tmp(1:3)];
     end
     if max(treblechromagram(:,i)) ~= 0
         treblechromagram(:,i) = treblechromagram(:,i) / max(treblechromagram(:,i));
+        tmp = treblechromagram(:,i);
+        treblechromagram(:,i) = [tmp(4:end) ; tmp(1:3)];
     end
     if max(basschromagram(:,i)) ~= 0
         basschromagram(:,i) = basschromagram(:,i) / max(basschromagram(:,i));
+        tmp = basschromagram(:,i);
+        basschromagram(:,i) = [tmp(4:end) ; tmp(1:3)];
     end
 end
 
@@ -352,55 +373,178 @@ treblechromagram(treblechromagram < lowT) = 0;
 basschromagram(basschromagram < lowT) = 0;
 
 % plot chromagrams
-notenames = {'A','A#','B','C','C#','D','D#','E','F','F#','G','G#'};
+notenames = {'C','C#','D','D#','E','F','F#','G','G#','A','A#','B'};
 sizeCh = size(chromagram);
-p = 1:sizeCh(1);
-k = 1:sizeCh(2);
+pc = 1:sizeCh(1);
+kc = 1:sizeCh(2);
 T = sizeS(2); % the total number of time slices contained in the evidence
 t = ((hopsize/fs)*(1:T));
 plotsize = 1:T;
 sfactor = 100;
 figure;
-image(t(plotsize),p,sfactor*chromagram(:,plotsize));
+image(t(plotsize),pc,sfactor*chromagram(:,plotsize));
 set(gca,'YDir','normal');
 set(gca, 'YTick',1:12, 'YTickLabel', notenames);
 title('chromagram');
 xlabel('time(s)');
 ylabel('pitch class');
 figure;
-image(t(plotsize),p,sfactor*basschromagram(:,plotsize));
+image(t(plotsize),pc,sfactor*basschromagram(:,plotsize));
 set(gca,'YDir','normal');
 set(gca, 'YTick',1:12, 'YTickLabel', notenames);
 title('basschromagram');
 xlabel('time(s)');
 ylabel('pitch class');
 figure;
-image(t(plotsize),p,sfactor*treblechromagram(:,plotsize));
+image(t(plotsize),pc,sfactor*treblechromagram(:,plotsize));
 set(gca,'YDir','normal');
 set(gca, 'YTick',1:12, 'YTickLabel', notenames);
 title('treblechromagram');
 xlabel('time(s)');
 ylabel('pitch class');
 
+% compute basegram and uppergram (based on harmonic change matrix)
+sizeShv = size(Shv);
+basegram = zeros(2,sizeShv(2));
+uppergram = zeros(12,sizeShv(2));
+for j = 1:1:sizeShv(2)
+    for i = 1:1:sizeShv(1)
+        % find out the lowest salience
+        if Shv(i,j) > 0
+            basegram(1,j) = mod((i+9)-1,12) + 1; % turn into a normal format
+            basegram(2,j) = Shv(i,j);
+            break;
+        end
+    end
+end
+for i = 1:1:12
+    for kk = 1:1:sizeShv(1)/12
+        uppergram(i,:) = uppergram(i,:) + Shv(i + 12*(kk-1),:);
+    end
+end
+% normalize uppergram
+for j = 1:1:sizeShv(2)
+    if max(uppergram(:,j)) ~= 0
+        uppergram(:,j) = uppergram(:,j) / max(uppergram(:,j));
+        tmp = uppergram(:,j);
+        uppergram(:,j) = [tmp(4:end) ; tmp(1:3)];
+    end
+end
+% low-cut
+% lowT = 0.1;
+% uppergram(uppergram < lowT) = 0;
+% plot
+notenames = {'C','C#','D','D#','E','F','F#','G','G#','A','A#','B'};
+ph = 1:sizeShv(2);
+kh = 1:12;
+sfactor = 100;
+figure;
+image(kh,ph,sfactor*uppergram);
+set(gca,'YDir','normal');
+set(gca, 'YTick',1:12, 'YTickLabel', notenames);
+title('harmonicgram');
+figure;
+plot(ph,basegram(1,:),'o');
+title('bassonigram');
+set(gca, 'YTick',1:12, 'YTickLabel', notenames);
+
+
+% ********************************************************** %
 % ********************* Back End *************************** %
-% try chord recognition tree method
+% ********************************************************** %
+
+% try chord recognition tree method (or chord dictionary method)
 % the chord tree is built this way with priority from top to down
-% 1->3->5 maj
-% 1->3->5# aug
-% 1->3->7b dom7
-% 1->3->7 maj7
-% 1->3b->5 min
-% 1->3b->5b dim
-% 1->3b->6 maj/3
-% 1->3b->7b min7
-% 1->3b->7 minmaj7
-% 1->4->6 maj/5
-% 1->5->5 sus4
-% 1->2->5 sus2
+% --music--            --digital--     --digital difference--
+% 1->3->5 maj          1,5,8            4,7
+% 1->3->5# aug         1,5,9            4,8
+% 1->3->7b dom7        1,5,11           4,10
+% 1->3->7 maj7         1,5,12           4,11
+% 1->3b->5 min         1,4,8            3,7
+% 1->3b->5b dim        1,4,7            3,6
+% 1->3b->6b maj/3       1,4,9           3,8
+% 1->3b->7b min7       1,4,11           3,10
+% 1->3b->7 minmaj7     1,4,12           3,11
+% 1->4->6 maj/5        1,6,10           5,9
+% 1->4->5 sus4         1,6,8            5,7
+% 1->2->5 sus2         1,3,8            2,7
+% 1->3b min            1,4              3
+% 1->3 maj             1,5              4
+% 1->5 5               1,8              7
+% 1->2 2               1,3              2
+% default N            x,x,x            x,x
 % run the bass through this tree, if hit, then that's the chord rooted
 % on the bass
 % if miss, then run every other pitch through this tree, pick a hit with
 % root closest to the bass to form a slash chord
+nchordtype = 16;
+chordtree = cell(2,nchordtype);
+chordtree{1,1} = [4,7];
+chordtree{2,1} = 'maj';
+chordtree{1,2} = [4,8];
+chordtree{2,2} = 'aug';
+chordtree{1,3} = [4,10];
+chordtree{2,3} = 'dom7';
+chordtree{1,4} = [4,11];
+chordtree{2,4} = 'maj7';
+chordtree{1,5} = [3,7];
+chordtree{2,5} = 'min';
+chordtree{1,6} = [3,6];
+chordtree{2,6} = 'dim';
+chordtree{1,7} = [3,8];
+chordtree{2,7} = 'maj/3';
+chordtree{1,8} = [3,10];
+chordtree{2,8} = 'min7';
+chordtree{1,9} = [3,11];
+chordtree{2,9} = 'minmaj7';
+chordtree{1,10} = [5,9];
+chordtree{2,10} = 'maj/5';
+chordtree{1,11} = [5,7];
+chordtree{2,11} = 'sus4';
+chordtree{1,12} = [2,7];
+chordtree{2,12} = 'sus2';
+chordtree{1,13} = 3;
+chordtree{2,13} = 'min';
+chordtree{1,14} = 4;
+chordtree{2,14} = 'maj';
+chordtree{1,15} = 7;
+chordtree{2,15} = '5';
+chordtree{1,16} = 2;
+chordtree{2,16} = '2';
+% walk the tree using basegram and uppergram
+chordogram = cell(1,sizeShv(2));
+for j = 1:1:sizeShv(2)
+    bass = basegram(1,j);
+    upper = uppergram(:,j);
+    ismatchout = 0;
+    for i = 1:1:nchordtype
+        ismatchout = 0;
+        ismatchin = 1;
+        chordentry = chordtree{1,i};
+        lenentry = length(chordentry);
+        for jj = 1:1:lenentry
+            matchpos = mod(bass+chordentry(jj)-1,12) + 1;
+            if upper(matchpos) == 0
+                ismatchin = 0;
+            end
+        end
+        if ismatchin == 1
+            ismatchout = 1;
+            % convert maj/3 and maj/5 chord to correct bass
+            if i == 7
+                bass = mod(bass-4-1,12)+1;
+            end
+            if i == 10
+                bass = mod(bass-7-1,12)+1;
+            end
+            chordogram{j} = [num2bass(bass) chordtree{2,i}];
+            break;
+        end
+    end
+    if ismatchout == 0
+        chordogram{j} = [num2bass(bass) 'n'];
+    end
+end
 
 % try DBN models for,
 % chord progression inference,
@@ -517,7 +661,6 @@ evidence = cell(ss,T);
 % use real evidence from chromagram
 for i = 1:1:T
     ev = treblechromagram(:,i);
-    ev = [ev(4:end) ; ev(1:3)]; % rearrange so that C is at the bottom
     evidence(onodes,i) = num2cell(ev,1);
 end
 [jengine,llj] = enter_evidence(jengine, evidence);
@@ -595,7 +738,6 @@ evidence = cell(ss,T);
 % use real evidence from chromagram
 for i = 1:1:T
     ev = basschromagram(:,i);
-    ev = [ev(4:end) ; ev(1:3)]; % rearrange so that C is at the bottom
     evidence(onodes,i) = num2cell(ev,1);
 end
 [jengine,llj] = enter_evidence(jengine, evidence);
