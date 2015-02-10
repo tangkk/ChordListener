@@ -26,9 +26,6 @@ songMax = max(abs(x));
 x = x/songMax;
 len = length(x);
 
-% player = audioplayer(song,fs);
-% play(player);
-
 % implement a size 4096 hamming windowed, hop size 512 STFT spectrogram
 % with sample rate 11025, each hop's duration is 0.0464s = 46.4399ms
 wl = 4096;
@@ -43,15 +40,16 @@ for i = wl/2+1:hopsize:len - wl/2
     raw = x(raws:rawe).*w;
     fftraw = fft(raw);
     X(:,idx) = 2*abs(fftraw(1:wl/2));
-    
-%     % normalization
     X(:,idx) = X(:,idx) / max(X(:,idx));
     idx = idx + 1;
 end
 f = fs/2*linspace(0,1,wl/2);
-% k = (1/fs)*(1:len);
-% image(k,f,X);
-% set(gca,'YDir','normal');
+kf = (1/fs)*(1:len);
+sfactor = 100;
+figure;
+image(kf,f,sfactor*X);
+set(gca,'YDir','normal');
+title('spectrogram');
 
 % build the tone profiles for calculating note salience matrix
 % each sinusoidal at frequency 'ftone' is generated via sin(2*pi*n*f/fs)
@@ -64,6 +62,10 @@ Mc = zeros(numtones, wl/2); % complex tone profiles
 % the true frequency of the tone is supposed to lie on bin notenum*3-1,
 % e.g. A4 is bin 49*3-1 = 146, C4 is bin 40*3-1 = 119 (note that notenum is
 % not midinum, note num is the index of the key on a piano with A0 = 1)
+bassbound = 28;
+treblebound = 60;
+bassboot = 2;
+trebleboot = 0.5;
 for toneidx = 1:1:numtones
     ftone = fmin*(fratio^(toneidx-2));
     stone = sin(2*pi*(1:wl)*ftone/fs).*w';
@@ -77,16 +79,18 @@ for toneidx = 1:1:numtones
     fftctone = abs(fft(ctone));
     fftctone = fftctone(1:wl/2);
     fftctone = fftctone / norm(fftctone,2);
+    % bass boot
+    if toneidx < bassbound*3
+        ffttone = ffttone * bassboot;
+        fftctone = fftctone * bassboot;
+    end
+    if toneidx > treblebound*3
+        ffttone = ffttone * trebleboot;
+        fftctone = fftctone * trebleboot;
+    end
     Ms(toneidx,:) = ffttone;
     Mc(toneidx,:) = fftctone;
 end
-
-% % *************** Test NNLS chroma ************%
-% nnlschroma = zeros(numtones, lenSlice);
-% for i = 1:1:lenSlice
-%     display(i);
-%     nnlschroma(:,i) = lsqnonneg(Mc', X(:,i));
-% end
 
 % calculate note salience matrix of the stft spectrogram (cosine
 % similarity)
@@ -94,113 +98,121 @@ Ss = Ms*X;
 Sc = Mc*X;
 sizeM = size(Ms);
 sizeX = size(X);
-% p = 1:sizeM(1);
-% k = 1:sizeX(2);
-% figure;
-% image(k,p,Ss);
-% set(gca,'YDir','normal');
-% figure;
-% image(k,p,Sc);
-% set(gca,'YDir','normal');
+ps = 1:sizeM(1);
+ks = 1:sizeX(2);
+sfactor = 100;
+figure;
+image(ks,ps,sfactor*Ss);
+set(gca,'YDir','normal');
+title('simple tone salience matrix');
+figure;
+image(ks,ps,sfactor*Sc);
+set(gca,'YDir','normal');
+title('complex tone salience matrix');
 
-% % *************** Test NNLS chroma ************%
-% % build the tone profiles for calculating note salience matrix
-% % each sinusoidal at frequency 'ftone' is generated via sin(2*pi*n*f/fs)
-% % try nnls method on Ss
-% fmin = 27.5; % MIDI note 21
-% fmax = 1661; % MIDI note 92
-% fratio = 2^(1/36);
-% numtonesn = 256;
-% wln = 512;
-% wn = hamming(wln);
-% Msn = zeros(numtonesn, wln/2); % simple tone profiles
-% Mcn = zeros(numtonesn, wln/2); % complex tone profiles
-% % the true frequency of the tone is supposed to lie on bin notenum*3-1,
-% % e.g. A4 is bin 49*3-1 = 146, C4 is bin 40*3-1 = 119 (note that notenum is
-% % not midinum, note num is the index of the key on a piano with A0 = 1)
-% for toneidx = 1:1:numtonesn
-%     ftone = fmin*(fratio^(toneidx-2));
-%     stone = sin(2*pi*(1:wln)*ftone/fs).*wn';
-%     ctone = (0.9*sin(2*pi*(1:wln)*ftone/fs) + 0.9^2*sin(2*pi*(1:wln)*2*ftone/fs) + ...
-%         0.9^3*sin(2*pi*(1:wln)*3*ftone/fs) + 0.9^4*sin(2*pi*(1:wln)*4*ftone/fs)).*wn';
-%     
-%     ffttone = abs(fft(stone));
-%     ffttone = ffttone(1:wln/2);
-%     ffttone = ffttone / norm(ffttone,2);
-%     
-%     fftctone = abs(fft(ctone));
-%     fftctone = fftctone(1:wln/2);
-%     fftctone = fftctone / norm(fftctone,2);
-%     Msn(toneidx,:) = ffttone;
-%     Mcn(toneidx,:) = fftctone;
-% end
-% nnlschroma = zeros(numtonesn, lenSlice);
-% for i = 1:1:lenSlice
-%     display(i);
-%     nnlschroma(:,i) = lsqnonneg(Mcn', Ss(:,i));
-% end
-% sfactor = 1000;
-% sizennls = size(nnlschroma);
-% p = 1:sizennls(1);
-% k = 1:sizennls(2);
-% figure;
-% image(k,p,sfactor*nnlschroma);
-% set(gca,'YDir','normal');
-% title('nnls chroma');
-
-% calculate running mean and runnind std matrix for every column
-% TODO: this module is computation non-efficient
-sizeSpre = size(Sc);
-rmeanS = zeros(sizeSpre);
-rstdS = zeros(sizeSpre);
-rmeanC = zeros(sizeSpre);
-rstdC = zeros(sizeSpre);
-for j = 1:1:sizeSpre(2)
-    % do a running mean and std of the 216 bins within a sliding window of <18 bin
-    colS = Ss(:,j);
-    colC = Sc(:,j);
-    for i = 1:1:sizeSpre(1)
-        wmean = max(i-8,1):min(i+9,sizeSpre(1));
-        rmeanS(i,j) = mean(colS(wmean));
-        rmeanC(i,j) = mean(colC(wmean));
-%         rstdS(i,j) = std(colS(wmean)); % TODO: how can I include this?
-%         rstdC(i,j) = std(colC(wmean));
-    end
-end
-
-% compute preliminary salience matrix
-Spre = Ss.*Sc;
-for i = 1:1:sizeSpre(1)
-    for j = 1:1:sizeSpre(2)
-        if Ss(i,j) < rmeanS(i,j) || Sc(i,j) < rmeanC(i,j)
-            Spre(i,j) = 0;
-        end
-    end
+% noise reduction process
+sizeNS = size(Sc);
+nt = 0.1;
+Ssn = zeros(sizeNS(1),sizeNS(2));
+Scn = zeros(sizeNS(1),sizeNS(2));
+for j = 1:1:sizeNS(2)
+    Ss(:,j) = Ss(:,j) / max(Ss(:,j));
+    Sc(:,j) = Sc(:,j) / max(Sc(:,j));
+    vs = Ss(:,j);
+    vc = Sc(:,j);
+    [pkss,locss] = findpeaks(vs,'MinPeakHeight',nt,'MinPeakProminence',nt);
+    [pksc,locsc] = findpeaks(vc,'MinPeakHeight',nt,'MinPeakProminence',nt);
+    vs = zeros(sizeNS(1),1);
+    vs(locss) = pkss;
+    Ssn(:,j) = vs;
+    vc = zeros(sizeNS(1),1);
+    vc(locsc) = pksc;
+    Scn(:,j) = vc;
+%     tmp = Sc(:,j);
+%     tmp(tmp<nt) = 0;
+%     Sc(:,j) = tmp;
+%     tmp = Ss(:,j);
+%     tmp(tmp<nt) = 0;
+%     Ss(:,j) = tmp;
 end
 sfactor = 100;
-pp = 1:sizeSpre(1);
-kk = 1:sizeSpre(2);
 figure;
-image(kk,pp,sfactor*Spre);
+image(ks,ps,sfactor*Ssn);
 set(gca,'YDir','normal');
-title('preliminary salience matrix');
+title('noised reduced simple tone salience matrix');
+figure;
+image(ks,ps,sfactor*Scn);
+set(gca,'YDir','normal');
+title('noised reduced complex tone salience matrix');
+% rmeanS = zeros(sizeSpre);
+% rstdS = zeros(sizeSpre);
+% rmeanC = zeros(sizeSpre);
+% rstdC = zeros(sizeSpre);
+% for j = 1:1:sizeSpre(2)
+%     % do a running mean and std of the 216 bins within a sliding window of <18 bin
+%     colS = Ss(:,j);
+%     colC = Sc(:,j);
+%     for i = 1:1:sizeSpre(1)
+%         wmean = max(i-8,1):min(i+9,sizeSpre(1));
+%         rmeanS(i,j) = mean(colS(wmean));
+%         rmeanC(i,j) = mean(colC(wmean));
+% %         rstdS(i,j) = std(colS(wmean)); % TODO: how can I include this?
+% %         rstdC(i,j) = std(colC(wmean));
+%     end
+% end
 
+% compute preliminary salience matrix
+% Spre = Ss.*Sc;
+% for i = 1:1:sizeSpre(1)
+%     for j = 1:1:sizeSpre(2)
+%         if Ss(i,j) < rmeanS(i,j) || Sc(i,j) < rmeanC(i,j)
+%             Spre(i,j) = 0;
+%         end
+%     end
+% end
+% sfactor = 100;
+% pp = 1:sizeNS(1);
+% kk = 1:sizeNS(2);
+% figure;
+% image(kk,pp,sfactor*S);
+% set(gca,'YDir','normal');
+% title('preliminary salience matrix');
 % tuning - have little effect for common commercial songs, add later
 % my tuning consider only Sbar = (sum(Spre,2))/sizeSpre(2);
 % and see if the location of peaks different from correct values
 
-S = zeros(sizeSpre(1)/3, sizeSpre(2));
-for i = 1:3:sizeSpre(1)
-    for j = 1:1:sizeSpre(2)
-        S((i+2)/3,j) = (Spre(i,j) + Spre(i+1,j) + Spre(i+2,j));
+% S = zeros(sizeNS(1)/3, sizeNS(2));
+% for i = 1:3:sizeNS(1)
+%     for j = 1:1:sizeNS(2)
+%         S((i+2)/3,j) = (Spre(i,j) + Spre(i+1,j) + Spre(i+2,j));
+%     end
+% end
+% sizeS = size(S);
+% for i = 1:1:sizeS(2)
+%     S(:,i) = S(:,i) / max(S(:,i));
+% end
+% 
+% sfactor = 100;
+% p = 1:sizeS(1);
+% k = 1:sizeS(2);
+% figure;
+% image(k,p,sfactor*S);
+% set(gca,'YDir','normal');
+% title('note salience matrix');
+
+Spres = zeros(sizeNS(1)/3, sizeNS(2));
+Sprec = zeros(sizeNS(1)/3, sizeNS(2));
+for i = 1:3:sizeNS(1)
+    for j = 1:1:sizeNS(2)
+        Spres((i+2)/3,j) = (Ssn(i,j) + Ssn(i+1,j) + Ssn(i+2,j));
+        Sprec((i+2)/3,j) = (Scn(i,j) + Scn(i+1,j) + Scn(i+2,j));
     end
 end
+S = Spres.*Sprec;
 sizeS = size(S);
-% normalization
-for i = 1:1:sizeS(2)
-    S(:,i) = S(:,i) / max(S(:,i));
+for j = 1:1:sizeNS(2)
+    S(:,j) = S(:,j) / max(S(:,j)); 
 end
-
 sfactor = 100;
 p = 1:sizeS(1);
 k = 1:sizeS(2);
@@ -209,30 +221,92 @@ image(k,p,sfactor*S);
 set(gca,'YDir','normal');
 title('note salience matrix');
 
-% gestalt filter (fill in signals that is automatically filled in by
-% humans)
-wg = 10;
+% initial gestalt filter (fill in signals that is automatically filled in by
+% humans initially)
+% wg = 10;
+% Sg = zeros(sizeS(1), sizeS(2));
+% gesc = 0;
+% gesct = 1;
+% gest = 0.1;
+% for i = 1:1:sizeS(1)
+%     for j = wg/2:wg/2:sizeS(2)-wg/2
+%         gesval = mean(S(i,j-wg/2+1:j+wg/2));
+%         if gesval > gest && gesc >= gesct
+%             Sg(i,j-wg/2+1:j+wg/2) = gesval;
+%             gesc = gesc + 1;
+%         elseif gesval > gest
+%             gesc = gesc + 1;
+%         else
+%             gesc = 0;
+%         end
+%     end
+% end
+
+% % feeback gestalt filter (fill in signals within harmonic change boundaries)
+% Sg = zeros(sizeS(1), sizeS(2));
+% gest = 0.1;
+% for shcidx = 1:1:length(Shc) - 1
+%     wg = Shc(shcidx):Shc(shcidx+1); % using harmonic change as cues
+%     for i = 1:1:sizeS(1)
+%         gesval = mean(S(i,wg));
+%         if gesval > gest
+%             Sg(i,wg) = gesval;
+%         end
+%     end
+% end
+
+% if within a gestalt window ahead there's a non-zero bin, compensate the
+% blank in the middle
+wg = 20;
 Sg = zeros(sizeS(1), sizeS(2));
-gesc = 0;
-gesct = 1;
-gest = 0.1;
 for i = 1:1:sizeS(1)
-    for j = wg/2:wg/2:sizeS(2)-wg/2
-        gesval = mean(S(i,j-wg/2+1:j+wg/2));
-        if gesval > gest && gesc >= gesct
-            Sg(i,j-wg/2+1:j+wg/2) = gesval;
-            gesc = gesc + 1;
-        elseif gesval > gest
-            gesc = gesc + 1;
+    trackidx = 1;
+    isblank = 0;
+    for j = 1:1:sizeS(2)
+        if S(i,j) > 0
+            % compensate the gestalt
+            if isblank == 1
+                lenBlank = j - trackidx;
+                if lenBlank <= wg
+                    Sg(i,trackidx:j-1) = S(i,trackidx)*ones(1,lenBlank);
+                end
+            end
+            Sg(i,j) = S(i,j);
+            isblank = 0;
+            trackidx = j;
         else
-            gesc = 0;
+            isblank = 1;
         end
     end
 end
 figure;
 image(k,p,sfactor*Sg);
 set(gca,'YDir','normal');
-title('note gestalt salience matrix');
+title('note gestalt salience matrix - 1');
+% input from above, if a piece of salience is shorter than a gestalt window, ignore it
+wg = 10;
+for i = 1:1:sizeS(1)
+    trackidx = 1;
+    islight = 0;
+    for j = 1:1:sizeS(2)
+        if Sg(i,j) == 0
+            if islight == 1;
+                lenLight = j - trackidx;
+                if lenLight <= wg
+                    Sg(i,trackidx:j-1) = zeros(1,lenLight);
+                end
+            end
+            trackidx = j;
+            islight = 0;
+        else
+            islight = 1;
+        end
+    end
+end
+figure;
+image(k,p,sfactor*Sg);
+set(gca,'YDir','normal');
+title('note gestalt salience matrix - 2');
 
 % onset filter (roughly detect the note onsets)
 So = zeros(sizeS(1), sizeS(2));
@@ -252,11 +326,12 @@ title('onset matrix');
 % harmonic change filter (detect harmonic change boundaries)
 Sh = zeros(sizeS(1),sizeS(2));
 Shv = zeros(sizeS(1),sizeS(2)); % harmonic change matrix (one chord per col)
+Shc = zeros(1,sizeS(2));
 bassbound = 30;
 ht = 0.2;
 whs = 1;
 whe = 1;
-shvidx = 1;
+shidx = 1;
 for j = 1:1:sizeS(2)
     for i = 1:1:bassbound
         if So(i,j) > ht && j > 1 && j - whs > 10
@@ -277,15 +352,18 @@ for j = 1:1:sizeS(2)
                 Sh(:,jj) = tmp;
             end
             % fill the harmonic change vector
-            Shv(:,shvidx) = Sh(:,whs);
-            shvidx = shvidx + 1;
+            Shv(:,shidx) = Sh(:,whs);
+            Shc(shidx) = whs;
+            shidx = shidx + 1;
             whs = j;
             break;
         end
     end
 end
-nchords = shvidx - 1;
+nchords = shidx - 1;
+Shc(shidx) = sizeS(2);
 Shv = Shv(:,(1:nchords));
+Shc = Shc(1:nchords);
 figure;
 image(k,p,sfactor*Sh);
 set(gca,'YDir','normal');
