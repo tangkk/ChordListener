@@ -16,7 +16,7 @@ close all;
 % ********************************************************** %
 % ********************* Front End *************************** %
 % ********************************************************** %
-display('frontend');
+display('frontend -- from input to harmonic salience matrix');
 [x,fs] = audioread(path);
 songinfo = audioinfo(path);
 DSR = fs / 11025;
@@ -63,7 +63,7 @@ Mc = zeros(numtones, wl/2); % complex tone profiles
 % the true frequency of the tone is supposed to lie on bin notenum*3-1,
 % e.g. A4 is bin 49*3-1 = 146, C4 is bin 40*3-1 = 119 (note that notenum is
 % not midinum, note num is the index of the key on a piano with A0 = 1)
-bassbound = 28;
+bassbound = 30;
 treblebound = 60;
 bassboot = 2;
 trebleboot = 0.5;
@@ -80,7 +80,7 @@ for toneidx = 1:1:numtones
     fftctone = abs(fft(ctone));
     fftctone = fftctone(1:wl/2);
     fftctone = fftctone / norm(fftctone,2);
-    % bass boot
+    % bass and treble boot
     if toneidx < bassbound*3
         ffttone = ffttone * bassboot;
         fftctone = fftctone * bassboot;
@@ -94,7 +94,8 @@ for toneidx = 1:1:numtones
 end
 
 % calculate note salience matrix of the stft spectrogram (cosine
-% similarity)
+% similarity) (note that this is an additive approach, as contrast to
+% the nnls approach which is an deductive approach)
 Ss = Ms*X;
 Sc = Mc*X;
 sizeM = size(Ms);
@@ -110,6 +111,20 @@ figure;
 image(ks,ps,sfactor*Sc);
 set(gca,'YDir','normal');
 title('complex tone salience matrix');
+
+Spre = Sc.*Sc;
+figure;
+image(ks,ps,sfactor*Spre);
+set(gca,'YDir','normal');
+title('preliminary salience matrix');
+
+% calculate spectral centroid
+Sec = Spre(:,1:100);
+SX = sum(Sec,2);
+sc = round(sum(SX.*(1:length(SX))') / sum(SX));
+scw = sc/(length(SX));
+display(sc);
+display(scw);
 
 % noise reduction process
 sizeNS = size(Sc);
@@ -160,6 +175,14 @@ figure;
 image(k,p,sfactor*S);
 set(gca,'YDir','normal');
 title('note salience matrix');
+
+% calculate spectral centroid
+Sec = S(:,1:100);
+SX = sum(Sec,2);
+sc = round(sum(SX.*(1:length(SX))') / sum(SX));
+scw = sc/(length(SX));
+display(sc);
+display(scw);
 
 % if within a gestalt window ahead there's a non-zero bin, compensate the
 % blank in the middle
@@ -294,7 +317,11 @@ title('harmonic bounded salience matrix');
 figure;
 image(k(1:nchords),p,sfactor*Shv);
 set(gca,'YDir','normal');
-title('harmonic change matrix');
+title('harmonic matrix');
+figure;
+plot(1:length(Shc),Shc,'o');
+title('haromonic change moments');
+
 
 % ********************************************************** %
 % ********************* Mid End *************************** %
