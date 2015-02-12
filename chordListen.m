@@ -16,6 +16,7 @@ close all;
 % ********************************************************** %
 % ********************* Front End *************************** %
 % ********************************************************** %
+display('frontend');
 [x,fs] = audioread(path);
 songinfo = audioinfo(path);
 DSR = fs / 11025;
@@ -217,8 +218,12 @@ title('note gestalt salience matrix - 2');
 So = zeros(sizeS(1), sizeS(2));
 ot = 0.2;
 for i = 1:1:sizeS(1)
-    for j = 2:1:sizeS(2)
-        hi = Sg(i,j) - Sg(i,j-1);
+    for j = 1:1:sizeS(2)
+        if j == 1
+            hi = Sg(i,j) - 0;
+        else
+            hi = Sg(i,j) - Sg(i,j-1);
+        end
         if hi > ot
             So(i,j) = hi;
         end
@@ -232,18 +237,30 @@ title('onset matrix');
 % harmonic change filter (detect harmonic change boundaries)
 Sh = zeros(sizeS(1),sizeS(2));
 Shv = zeros(sizeS(1),sizeS(2)); % harmonic change matrix (one chord per col)
-Shc = zeros(1,sizeS(2));
+Shc = zeros(1,sizeS(2)); % harmonic change moments
 bassbound = 30;
 ht = ot;
-whs = 1;
-whe = 1;
+whs = 0;
+whe = 0;
 shidx = 1;
+firsttime = 1;
 for j = 1:1:sizeS(2)
     for i = 1:1:bassbound
-        if So(i,j) > ht && j > 1 && j - whs > 10
+        if (So(i,j) > ht && (j - whs > 10 || firsttime == 1)) || j == sizeS(2)
+            if firsttime == 1
+                firsttime = 0;
+                whs = j;
+                display(whs);
+                break;
+            end
             % take the mean over the harmonic window in terms of row
-            whe = j-1;
-            wh = whs:whe;
+            if j == sizeS(2)
+                whe = j;
+                wh = whs:whe;
+            else
+                whe = j-1;
+                wh = whs:whe;
+            end
             for ii = 1:1:sizeS(1)
                 gesiiwh = mean(Sg(ii,wh));
                 if gesiiwh > 0.10
@@ -259,7 +276,7 @@ for j = 1:1:sizeS(2)
             end
             % fill the harmonic change vector
             Shv(:,shidx) = Sh(:,whs);
-            Shc(shidx) = whs;
+            Shc(shidx) = whe;
             shidx = shidx + 1;
             whs = j;
             break;
@@ -269,7 +286,7 @@ end
 nchords = shidx - 1;
 Shc(shidx) = sizeS(2);
 Shv = Shv(:,(1:nchords));
-Shc = Shc(1:nchords);
+Shc = Shc(:,(1:nchords));
 figure;
 image(k,p,sfactor*Sh);
 set(gca,'YDir','normal');
@@ -279,6 +296,10 @@ image(k(1:nchords),p,sfactor*Shv);
 set(gca,'YDir','normal');
 title('harmonic change matrix');
 
+% ********************************************************** %
+% ********************* Mid End *************************** %
+% ********************************************************** %
+display('midend -- various 12-bin grams or 1-bin grams');
 % compute bass and treble profiles (once for all time)
 gb = zeros(1,sizeS(1));
 gt = zeros(1,sizeS(1));
@@ -350,13 +371,13 @@ for i = 1:1:sizeS(2)
     end
 end
 
-% low-cut chromagrams
+% low-cut various chromagrams
 lowT = 0.1;
 chromagram(chromagram < lowT) = 0;
 treblechromagram(treblechromagram < lowT) = 0;
 basschromagram(basschromagram < lowT) = 0;
 
-% plot chromagrams
+% plot varoius chromagrams
 notenames = {'C','C#','D','D#','E','F','F#','G','G#','A','A#','B'};
 sizeCh = size(chromagram);
 pc = 1:sizeCh(1);
@@ -414,10 +435,7 @@ for j = 1:1:sizeShv(2)
         uppergram(:,j) = [tmp(4:end) ; tmp(1:3)];
     end
 end
-% low-cut
-% lowT = 0.1;
-% uppergram(uppergram < lowT) = 0;
-% plot
+
 notenames = {'C','C#','D','D#','E','F','F#','G','G#','A','A#','B'};
 ph = 1:sizeShv(2);
 kh = 1:12;
@@ -431,7 +449,6 @@ figure;
 plot(ph,basegram(1,:),'o');
 title('basegram');
 set(gca, 'YTick',1:12, 'YTickLabel', notenames);
-
 
 % ********************************************************** %
 % ********************* Back End *************************** %
@@ -461,6 +478,7 @@ set(gca, 'YTick',1:12, 'YTickLabel', notenames);
 % on the bass
 % if miss, then run every other pitch through this tree, pick a hit with
 % root closest to the bass to form a slash chord
+display('backend -- chordtree');
 nchordtype = 16;
 chordtree = cell(2,nchordtype);
 chordtree{1,1} = [4,7];
@@ -530,6 +548,31 @@ for j = 1:1:sizeShv(2)
     end
 end
 
+% write results
+fw = fopen([audio(1:end-4) '.ct.txt'],'w');
+formatSpec1 = '%s';
+formatSpec2 = '%s\n';
+sumhop = 0;
+lenchordogram = length(chordogram);
+for i = 1:1:lenchordogram
+    if i < lenchordogram
+        if strcmp(chordogram{i}, chordogram{i+1}) == 1
+            continue;
+        end
+    end
+    if sumhop == 0
+        s = [chordogram{i} '===>' num2str(0)];
+    else
+        s = [chordogram{i} '===>' num2str(t(sumhop))];
+    end
+    fprintf(fw, formatSpec1, s);
+    sumhop = Shc(i);
+    s = ['-' num2str(t(sumhop))];
+    fprintf(fw, formatSpec2, s);
+end
+fclose(fw);
+
+display('backend -- dbn');
 % try DBN models for,
 % chord progression inference,
 % based on,
@@ -799,7 +842,7 @@ display('chordprint');
 display(chordprint);
 
 % write results
-fw = fopen([audio(1:end-4) '.txt'],'w');
+fw = fopen([audio(1:end-4) '.dbn.txt'],'w');
 formatSpec1 = '%s';
 formatSpec2 = '%s\n';
 sumhop = 0;
