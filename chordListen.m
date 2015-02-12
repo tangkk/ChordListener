@@ -128,12 +128,6 @@ for j = 1:1:sizeNS(2)
     vc = zeros(sizeNS(1),1);
     vc(locsc) = pksc;
     Scn(:,j) = vc;
-%     tmp = Sc(:,j);
-%     tmp(tmp<nt) = 0;
-%     Sc(:,j) = tmp;
-%     tmp = Ss(:,j);
-%     tmp(tmp<nt) = 0;
-%     Ss(:,j) = tmp;
 end
 sfactor = 100;
 figure;
@@ -144,61 +138,6 @@ figure;
 image(ks,ps,sfactor*Scn);
 set(gca,'YDir','normal');
 title('noised reduced complex tone salience matrix');
-% rmeanS = zeros(sizeSpre);
-% rstdS = zeros(sizeSpre);
-% rmeanC = zeros(sizeSpre);
-% rstdC = zeros(sizeSpre);
-% for j = 1:1:sizeSpre(2)
-%     % do a running mean and std of the 216 bins within a sliding window of <18 bin
-%     colS = Ss(:,j);
-%     colC = Sc(:,j);
-%     for i = 1:1:sizeSpre(1)
-%         wmean = max(i-8,1):min(i+9,sizeSpre(1));
-%         rmeanS(i,j) = mean(colS(wmean));
-%         rmeanC(i,j) = mean(colC(wmean));
-% %         rstdS(i,j) = std(colS(wmean)); % TODO: how can I include this?
-% %         rstdC(i,j) = std(colC(wmean));
-%     end
-% end
-
-% compute preliminary salience matrix
-% Spre = Ss.*Sc;
-% for i = 1:1:sizeSpre(1)
-%     for j = 1:1:sizeSpre(2)
-%         if Ss(i,j) < rmeanS(i,j) || Sc(i,j) < rmeanC(i,j)
-%             Spre(i,j) = 0;
-%         end
-%     end
-% end
-% sfactor = 100;
-% pp = 1:sizeNS(1);
-% kk = 1:sizeNS(2);
-% figure;
-% image(kk,pp,sfactor*S);
-% set(gca,'YDir','normal');
-% title('preliminary salience matrix');
-% tuning - have little effect for common commercial songs, add later
-% my tuning consider only Sbar = (sum(Spre,2))/sizeSpre(2);
-% and see if the location of peaks different from correct values
-
-% S = zeros(sizeNS(1)/3, sizeNS(2));
-% for i = 1:3:sizeNS(1)
-%     for j = 1:1:sizeNS(2)
-%         S((i+2)/3,j) = (Spre(i,j) + Spre(i+1,j) + Spre(i+2,j));
-%     end
-% end
-% sizeS = size(S);
-% for i = 1:1:sizeS(2)
-%     S(:,i) = S(:,i) / max(S(:,i));
-% end
-% 
-% sfactor = 100;
-% p = 1:sizeS(1);
-% k = 1:sizeS(2);
-% figure;
-% image(k,p,sfactor*S);
-% set(gca,'YDir','normal');
-% title('note salience matrix');
 
 Spres = zeros(sizeNS(1)/3, sizeNS(2));
 Sprec = zeros(sizeNS(1)/3, sizeNS(2));
@@ -220,40 +159,6 @@ figure;
 image(k,p,sfactor*S);
 set(gca,'YDir','normal');
 title('note salience matrix');
-
-% initial gestalt filter (fill in signals that is automatically filled in by
-% humans initially)
-% wg = 10;
-% Sg = zeros(sizeS(1), sizeS(2));
-% gesc = 0;
-% gesct = 1;
-% gest = 0.1;
-% for i = 1:1:sizeS(1)
-%     for j = wg/2:wg/2:sizeS(2)-wg/2
-%         gesval = mean(S(i,j-wg/2+1:j+wg/2));
-%         if gesval > gest && gesc >= gesct
-%             Sg(i,j-wg/2+1:j+wg/2) = gesval;
-%             gesc = gesc + 1;
-%         elseif gesval > gest
-%             gesc = gesc + 1;
-%         else
-%             gesc = 0;
-%         end
-%     end
-% end
-
-% % feeback gestalt filter (fill in signals within harmonic change boundaries)
-% Sg = zeros(sizeS(1), sizeS(2));
-% gest = 0.1;
-% for shcidx = 1:1:length(Shc) - 1
-%     wg = Shc(shcidx):Shc(shcidx+1); % using harmonic change as cues
-%     for i = 1:1:sizeS(1)
-%         gesval = mean(S(i,wg));
-%         if gesval > gest
-%             Sg(i,wg) = gesval;
-%         end
-%     end
-% end
 
 % if within a gestalt window ahead there's a non-zero bin, compensate the
 % blank in the middle
@@ -308,109 +213,61 @@ image(k,p,sfactor*Sg);
 set(gca,'YDir','normal');
 title('note gestalt salience matrix - 2');
 
-% % onset filter (roughly detect the note onsets)
-% So = zeros(sizeS(1), sizeS(2));
-% for i = 1:1:sizeS(1)
-%     for j = 2:1:sizeS(2)
-%         hi = Sg(i,j) - Sg(i,j-1);
-%         if hi > 0.1
-%             So(i,j) = hi;
-%         end
-%     end
-% end
-% figure;
-% image(k,p,sfactor*So);
-% set(gca,'YDir','normal');
-% title('onset matrix');
-% 
-% % harmonic change filter (detect harmonic change boundaries)
-% Sh = zeros(sizeS(1),sizeS(2));
-% Shv = zeros(sizeS(1),sizeS(2)); % harmonic change matrix (one chord per col)
-% Shc = zeros(1,sizeS(2));
-% bassbound = 30;
-% ht = 0.2;
-% whs = 1;
-% whe = 1;
-% shidx = 1;
-% for j = 1:1:sizeS(2)
-%     for i = 1:1:bassbound
-%         if So(i,j) > ht && j > 1 && j - whs > 10
-%             % take the mean over the harmonic window in terms of row
-%             whe = j-1;
-%             wh = whs:whe;
-%             for ii = 1:1:sizeS(1)
-%                 gesiiwh = mean(Sg(ii,wh));
-%                 if gesiiwh > 0.10
-%                     Sh(ii,wh) = ones(1,length(wh))*gesiiwh;
-%                 end
-%             end
-%             % normalize the content within harmonic window in terms of col
-%             for jj = whs:1:whe
-%                 tmp = Sh(:,jj);
-%                 tmp = tmp / max(tmp);
-%                 tmp(tmp < 0.2) = 0;
-%                 Sh(:,jj) = tmp;
-%             end
-%             % fill the harmonic change vector
-%             Shv(:,shidx) = Sh(:,whs);
-%             Shc(shidx) = whs;
-%             shidx = shidx + 1;
-%             whs = j;
-%             break;
-%         end
-%     end
-% end
-% nchords = shidx - 1;
-% Shc(shidx) = sizeS(2);
-% Shv = Shv(:,(1:nchords));
-% Shc = Shc(1:nchords);
-% figure;
-% image(k,p,sfactor*Sh);
-% set(gca,'YDir','normal');
-% title('harmonic bounded salience matrix');
-% figure;
-% image(k(1:nchords),p,sfactor*Shv);
-% set(gca,'YDir','normal');
-% title('harmonic change matrix');
+% onset filter (roughly detect the note onsets)
+So = zeros(sizeS(1), sizeS(2));
+ot = 0.2;
+for i = 1:1:sizeS(1)
+    for j = 2:1:sizeS(2)
+        hi = Sg(i,j) - Sg(i,j-1);
+        if hi > ot
+            So(i,j) = hi;
+        end
+    end
+end
+figure;
+image(k,p,sfactor*So);
+set(gca,'YDir','normal');
+title('onset matrix');
 
 % harmonic change filter (detect harmonic change boundaries)
-Sh = zeros(sizeS(1),sizeS(2)); % averge out salience matrix via harmonic boundaries
+Sh = zeros(sizeS(1),sizeS(2));
 Shv = zeros(sizeS(1),sizeS(2)); % harmonic change matrix (one chord per col)
 Shc = zeros(1,sizeS(2));
 bassbound = 30;
+ht = ot;
 whs = 1;
 whe = 1;
 shidx = 1;
-prevbass = 0;
-trackidx = 1;
-firsttime = 1;
-Shc(shidx) = trackidx;
 for j = 1:1:sizeS(2)
     for i = 1:1:bassbound
-        if Sg(i,j) > 0
-            if firsttime == 1
-                prevbass = i;
-                firsttime = 0;
-                break;
-            end
-            curbass = i;
-            if curbass ~= prevbass || j == sizeS(2)
-                lenHarm = j - trackidx;
-                % average the harmonic bounded window
-                for ii = 1:1:sizeS(1)
-                    Sh(ii,trackidx:j-1) = mean(Sg(ii,trackidx:j-1))*ones(1,lenHarm);
+        if So(i,j) > ht && j > 1 && j - whs > 10
+            % take the mean over the harmonic window in terms of row
+            whe = j-1;
+            wh = whs:whe;
+            for ii = 1:1:sizeS(1)
+                gesiiwh = mean(Sg(ii,wh));
+                if gesiiwh > 0.10
+                    Sh(ii,wh) = ones(1,length(wh))*gesiiwh;
                 end
-                Shv(:,shidx) = Sh(:,trackidx);
-                Shc(shidx) = trackidx;
-                trackidx = j;
-                shidx = shidx+1;
             end
-            prevbass = curbass;
+            % normalize the content within harmonic window in terms of col
+            for jj = whs:1:whe
+                tmp = Sh(:,jj);
+                tmp = tmp / max(tmp);
+                tmp(tmp < 0.2) = 0;
+                Sh(:,jj) = tmp;
+            end
+            % fill the harmonic change vector
+            Shv(:,shidx) = Sh(:,whs);
+            Shc(shidx) = whs;
+            shidx = shidx + 1;
+            whs = j;
             break;
         end
     end
 end
 nchords = shidx - 1;
+Shc(shidx) = sizeS(2);
 Shv = Shv(:,(1:nchords));
 Shc = Shc(1:nchords);
 figure;
@@ -566,13 +423,13 @@ ph = 1:sizeShv(2);
 kh = 1:12;
 sfactor = 100;
 figure;
-image(kh,ph,sfactor*uppergram);
+image(ph,kh,sfactor*uppergram);
 set(gca,'YDir','normal');
 set(gca, 'YTick',1:12, 'YTickLabel', notenames);
-title('harmonicgram');
+title('uppergram');
 figure;
 plot(ph,basegram(1,:),'o');
-title('bassonigram');
+title('basegram');
 set(gca, 'YTick',1:12, 'YTickLabel', notenames);
 
 
@@ -966,10 +823,3 @@ fclose(fw);
 % ******************************************* %
 % play sound
 % sound(x(1:hopsize*length(plotsize)),fs);
-
-% sum = 0;
-% for i = 1:1:length(chordprint)
-%     if ~isempty(chordprint{2,i})
-%         sum = sum + chordprint{2,i};
-%     end
-% end
