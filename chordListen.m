@@ -9,7 +9,7 @@
 % ********************* Input ****************************** %
 % ********************************************************** %
 root = '../AudioSamples/';
-audio = 'haoting-2.mp3';
+audio = 'feijichangde1030-1.mp3';
 path = [root audio];
 close all;
 
@@ -283,7 +283,6 @@ for j = 1:1:sizeS(2)
             if firsttime == 1
                 firsttime = 0;
                 whs = j;
-                display(whs);
                 break;
             end
             % take the mean over the harmonic window in terms of row
@@ -551,7 +550,7 @@ chordtree{2,15} = '5';
 chordtree{1,16} = 2;
 chordtree{2,16} = '2';
 % walk the tree using basegram and uppergram
-chordogram = cell(1,sizeShv(2));
+chordogram = cell(3,sizeShv(2));
 for j = 1:1:sizeShv(2)
     bass = basegram(1,j);
     upper = uppergram(:,j);
@@ -576,14 +575,89 @@ for j = 1:1:sizeShv(2)
             if i == 10
                 bass = mod(bass-7-1,12)+1;
             end
-            chordogram{j} = [num2bass(bass) chordtree{2,i}];
+            chordogram{1,j} = bass;
+            chordogram{2,j} = chordtree{2,i};
+            chordogram{3,j} = num2bass(bass);
             break;
         end
     end
     if ismatchout == 0
-        chordogram{j} = [num2bass(bass) 'n'];
+        chordogram{1,j} = bass;
+        chordogram{2,j} = 'n';
+        chordogram{3,j} = num2bass(bass);
     end
 end
+
+% gestalt chordogram (merge chord types as human would do)
+% only keep maj, min, aug, dim, dom, minmaj, /3 and /5
+% if 2, 5, n type, merge to the nearest maj or min type with same bass
+% if /3 and /5, merge from nearest whatever type with same bass
+% if sus2, sus4, merge to maj with same bass
+chordogram = [{0;'N';'N'} chordogram {0;'N';'N'}];
+yes = 1;
+while yes
+    yes = 0;
+    for i = 2:1:length(chordogram)-1
+        cb = chordogram{1,i};
+        ct = chordogram{2,i};
+        pcb = chordogram{1,i-1};
+        pct = chordogram{2,i-1};
+        ncb = chordogram{1,i+1};
+        nct = chordogram{2,i+1};
+        if strcmp(ct,'5') || strcmp(ct,'2')|| strcmp(ct,'n')
+            if pcb == cb && ~(strcmp(pct,'5') || strcmp(pct,'2')|| strcmp(pct,'n'))
+                ct = pct;
+                chordogram{2,i} = ct;
+                yes = 1;
+                continue;
+            end
+            if ncb == cb && ~(strcmp(nct,'5') || strcmp(nct,'2')|| strcmp(nct,'n'))
+                ct = nct;
+                chordogram{2,i} = ct;
+                yes = 1;
+                continue;
+            end
+        end
+        if strcmp(ct,'maj/3')
+            if mod(pcb-4-1,12)+1 == cb
+                chordogram{1,i-1} = cb;
+                chordogram{2,i-1} = 'maj/3';
+                chordogram{3,i-1} = num2bass(cb);
+                yes = 1;
+                continue;
+            end
+            if mod(ncb-4-1,12)+1 == cb
+                chordogram{1,i+1} = cb;
+                chordogram{2,i+1} = 'maj/3';
+                chordogram{3,i+1} = num2bass(cb);
+                yes = 1;
+                continue;
+            end
+        end
+        if strcmp(ct,'maj/5')
+            if mod(pcb-7-1,12)+1 == cb
+                chordogram{1,i-1} = cb;
+                chordogram{2,i-1} = 'maj/5';
+                chordogram{3,i-1} = num2bass(cb);
+                yes = 1;
+                continue;
+            end
+            if mod(ncb-7-1,12)+1 == cb
+                chordogram{1,i+1} = cb;
+                chordogram{2,i+1} = 'maj/5';
+                chordogram{3,i+1} = num2bass(cb);
+                yes = 1;
+                continue;
+            end
+        end
+        if strcmp(ct,'sus2') || strcmp(ct,'sus4')
+            chordogram{2,i} = 'maj';
+            yes = 1;
+            continue;
+        end
+    end
+end
+chordogram = chordogram(:,2:end-1);
 
 % write results
 fw = fopen([audio(1:end-4) '.ct.txt'],'w');
@@ -593,14 +667,14 @@ sumhop = 0;
 lenchordogram = length(chordogram);
 for i = 1:1:lenchordogram
     if i < lenchordogram
-        if strcmp(chordogram{i}, chordogram{i+1}) == 1
+        if strcmp(chordogram{3,i}, chordogram{3,i+1}) == 1  && strcmp(chordogram{2,i}, chordogram{2,i+1}) == 1
             continue;
         end
     end
     if sumhop == 0
-        s = [chordogram{i} '===>' num2str(0)];
+        s = [chordogram{3,i} chordogram{2,i} '===>' num2str(0)];
     else
-        s = [chordogram{i} '===>' num2str(t(sumhop))];
+        s = [chordogram{3,i} chordogram{2,i} '===>' num2str(t(sumhop))];
     end
     fprintf(fw, formatSpec1, s);
     sumhop = Shc(i);
