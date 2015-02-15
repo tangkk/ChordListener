@@ -9,7 +9,7 @@
 % ********************* Input ****************************** %
 % ********************************************************** %
 root = '../AudioSamples/';
-audio = 'haoting-2.mp3';
+audio = 'tuihou-1.mp3';
 path = [root audio];
 close all;
 
@@ -63,10 +63,10 @@ Mc = zeros(numtones, wl/2); % complex tone profiles
 % the true frequency of the tone is supposed to lie on bin notenum*3-1,
 % e.g. A4 is bin 49*3-1 = 146, C4 is bin 40*3-1 = 119 (note that notenum is
 % not midinum, note num is the index of the key on a piano with A0 = 1)
-staticbassbound = 30;
-statictreblebound = 60;
-bassboot = 1.5;
-trebleboot = 0.8;
+bassbound = 30;
+treblebound = 60;
+bassboot = 2;
+trebleboot = 0.5;
 for toneidx = 1:1:numtones
     ftone = fmin*(fratio^(toneidx-2));
     stone = sin(2*pi*(1:wl)*ftone/fs).*w';
@@ -81,11 +81,11 @@ for toneidx = 1:1:numtones
     fftctone = fftctone(1:wl/2);
     fftctone = fftctone / norm(fftctone,2);
     % bass and treble boot
-    if toneidx < staticbassbound*3
+    if toneidx < bassbound*3
         ffttone = ffttone * bassboot;
         fftctone = fftctone * bassboot;
     end
-    if toneidx > statictreblebound*3
+    if toneidx > treblebound*3
         ffttone = ffttone * trebleboot;
         fftctone = fftctone * trebleboot;
     end
@@ -123,6 +123,8 @@ Sec = Spre(:,1:100);
 SX = sum(Sec,2);
 sc = round(sum(SX.*(1:length(SX))') / sum(SX));
 scw = sc/(length(SX));
+display(sc);
+display(scw);
 
 % noise reduction process
 sizeNS = size(Sc);
@@ -179,6 +181,8 @@ Sec = S(:,1:100);
 SX = sum(Sec,2);
 sc = round(sum(SX.*(1:length(SX))') / sum(SX));
 scw = sc/(length(SX));
+display(sc);
+display(scw);
 
 % if within a gestalt window ahead there's a non-zero bin, compensate the
 % blank in the middle
@@ -253,32 +257,18 @@ image(k,p,sfactor*So);
 set(gca,'YDir','normal');
 title('onset matrix');
 
-% bassline filter (roughly set the dynamic bass bounds)
-Sb = zeros(1, sizeS(2));
-bt = 0.3;
-for j = 1:1:sizeS(2)
-    for i = 1:1:sizeS(1)
-        if Sg(i,j) >= bt
-            Sb(j) = i;
-            break;
-        end
-    end
-end
-figure;
-plot(1:length(Sb),Sb,'*');
-title('rough bassline');
-
 % harmonic change filter (detect harmonic change boundaries)
 Sh = zeros(sizeS(1),sizeS(2));
 Shv = zeros(sizeS(1),sizeS(2)); % harmonic change matrix (one chord per col)
 Shc = zeros(1,sizeS(2)); % harmonic change moments
+bassbound = 30;
 ht = ot;
 whs = 0;
 whe = 0;
 shidx = 1;
 firsttime = 1;
 for j = 1:1:sizeS(2)
-    for i = 1:1:min(Sb(j)+5,sizeS(1))
+    for i = 1:1:bassbound
         if (So(i,j) > ht && (j - whs > 10 || firsttime == 1)) || j == sizeS(2)
             if firsttime == 1
                 firsttime = 0;
