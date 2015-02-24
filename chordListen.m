@@ -8,10 +8,11 @@
 % ********************************************************** %
 % ********************* Input ****************************** %
 % ********************************************************** %
-root = '../AudioSamples/';
-audio = 'feijichangde1030-1.mp3';
-path = [root audio];
 close all;
+clear;
+root = '../AudioSamples/';
+audio = 'iloveyouso-1.mp3';
+path = [root audio];
 
 % ********************************************************** %
 % ********************* Front End *************************** %
@@ -180,23 +181,50 @@ SX = sum(Sec,2);
 sc = round(sum(SX.*(1:length(SX))') / sum(SX));
 scw = sc/(length(SX));
 
+% input from above, if a piece of salience is shorter than a gestalt window, ignore it
+wg = 10;
+Sgneg = zeros(sizeS(1), sizeS(2));
+for i = 1:1:sizeS(1)
+    trackidx = 1;
+    islight = 0;
+    for j = 1:1:sizeS(2)
+        if S(i,j) == 0
+            if islight == 1;
+                lenLight = j - trackidx;
+                if lenLight <= wg
+                    Sgneg(i,trackidx:j-1) = zeros(1,lenLight);
+                end
+            end
+            trackidx = j;
+            islight = 0;
+        else
+            Sgneg(i,j) = S(i,j);
+            islight = 1;
+        end
+    end
+end
+figure;
+image(k,p,sfactor*Sgneg);
+set(gca,'YDir','normal');
+title('note gestalt salience matrix - 1');
+
 % if within a gestalt window ahead there's a non-zero bin, compensate the
 % blank in the middle
 wg = 20;
-Sg = zeros(sizeS(1), sizeS(2));
+Sgpos = zeros(sizeS(1), sizeS(2));
 for i = 1:1:sizeS(1)
     trackidx = 1;
     isblank = 0;
     for j = 1:1:sizeS(2)
-        if S(i,j) > 0
+        if Sgneg(i,j) > 0
             % compensate the gestalt
             if isblank == 1
                 lenBlank = j - trackidx;
                 if lenBlank <= wg
-                    Sg(i,trackidx:j-1) = S(i,trackidx)*ones(1,lenBlank);
+                    Sgpos(i,trackidx:j-1) = Sgneg(i,trackidx)*ones(1,lenBlank);
                 end
             end
-            Sg(i,j) = S(i,j);
+            Sgpos(i,j) = Sgneg(i,j);
             isblank = 0;
             trackidx = j;
         else
@@ -205,36 +233,14 @@ for i = 1:1:sizeS(1)
     end
 end
 figure;
-image(k,p,sfactor*Sg);
-set(gca,'YDir','normal');
-title('note gestalt salience matrix - 1');
-% input from above, if a piece of salience is shorter than a gestalt window, ignore it
-wg = 10;
-for i = 1:1:sizeS(1)
-    trackidx = 1;
-    islight = 0;
-    for j = 1:1:sizeS(2)
-        if Sg(i,j) == 0
-            if islight == 1;
-                lenLight = j - trackidx;
-                if lenLight <= wg
-                    Sg(i,trackidx:j-1) = zeros(1,lenLight);
-                end
-            end
-            trackidx = j;
-            islight = 0;
-        else
-            islight = 1;
-        end
-    end
-end
-figure;
-image(k,p,sfactor*Sg);
+image(k,p,sfactor*Sgpos);
 set(gca,'YDir','normal');
 title('note gestalt salience matrix - 2');
 
+Sg = Sgpos; % gestalt salience matrix
+
 % onset filter (roughly detect the note onsets)
-So = zeros(sizeS(1), sizeS(2));
+So = zeros(sizeS(1), sizeS(2)); % onset matrix
 ot = 0.2;
 for i = 1:1:sizeS(1)
     for j = 1:1:sizeS(2)
@@ -254,7 +260,7 @@ set(gca,'YDir','normal');
 title('onset matrix');
 
 % bassline filter (roughly set the dynamic bass bounds)
-Sb = zeros(1, sizeS(2));
+Sb = zeros(1, sizeS(2)); % bassline vector
 bt = 0.3;
 for j = 1:1:sizeS(2)
     for i = 1:1:sizeS(1)
@@ -269,7 +275,7 @@ plot(1:length(Sb),Sb,'*');
 title('rough bassline');
 
 % harmonic change filter (detect harmonic change boundaries)
-Sh = zeros(sizeS(1),sizeS(2));
+Sh = zeros(sizeS(1),sizeS(2)); % harmonic smooth matrix (one slice per col)
 Shv = zeros(sizeS(1),sizeS(2)); % harmonic change matrix (one chord per col)
 Shc = zeros(1,sizeS(2)); % harmonic change moments
 ht = ot;
@@ -302,7 +308,9 @@ for j = 1:1:sizeS(2)
             % normalize the content within harmonic window in terms of col
             for jj = whs:1:whe
                 tmp = Sh(:,jj);
-                tmp = tmp / max(tmp);
+                if max(tmp) ~= 0
+                    tmp = tmp / max(tmp);
+                end
                 tmp(tmp < 0.2) = 0;
                 Sh(:,jj) = tmp;
             end
@@ -456,6 +464,7 @@ for j = 1:1:sizeShv(2)
             basegram(2,j) = Shv(i,j);
             break;
         end
+        % if the whole col of Shv are zero, then basegram(:,j) is [0;0]
     end
 end
 for i = 1:1:12
@@ -472,7 +481,7 @@ for j = 1:1:sizeShv(2)
     end
 end
 
-notenames = {'C','C#','D','D#','E','F','F#','G','G#','A','A#','B'};
+notenames = {'N','C','C#','D','D#','E','F','F#','G','G#','A','A#','B'};
 ph = 1:sizeShv(2);
 kh = 1:12;
 sfactor = 100;
@@ -484,7 +493,7 @@ title('uppergram');
 figure;
 plot(ph,basegram(1,:),'o');
 title('basegram');
-set(gca, 'YTick',1:12, 'YTickLabel', notenames);
+set(gca, 'YTick',0:12, 'YTickLabel', notenames);
 
 % ********************************************************** %
 % ********************* Back End *************************** %
@@ -591,6 +600,8 @@ end
 % gestalt chordogram (merge chord types as human would do)
 % only keep maj, min, aug, dim, dom, minmaj, /3 and /5
 % if 2, 5, n type, merge to the nearest maj or min type with same bass
+%   if there is no nearest maj or min, merge n to 2 or 5, if both 2 and 5
+%   exist in the neigbourhood, merge them to be sus2
 % if /3 and /5, merge from nearest whatever type with same bass
 % if sus2, sus4, merge to maj with same bass
 chordogram = [{0;'N';'N'} chordogram {0;'N';'N'}];
@@ -604,6 +615,48 @@ while yes
         pct = chordogram{2,i-1};
         ncb = chordogram{1,i+1};
         nct = chordogram{2,i+1};
+        if strcmp(ct,'n')
+            if pcb == cb && ~(strcmp(pct,'n'))
+                ct = pct;
+                chordogram{2,i} = ct;
+                yes = 1;
+                continue;
+            end
+            if ncb == cb && ~(strcmp(nct,'n'))
+                ct = nct;
+                chordogram{2,i} = ct;
+                yes = 1;
+                continue;
+            end
+        end
+        if strcmp(ct,'2')
+            if pcb == cb && strcmp(pct,'5')
+                ct = 'sus2';
+                chordogram{2,i} = ct;
+                yes = 1;
+                continue;
+            end
+            if ncb == cb && strcmp(nct,'5')
+                ct = 'sus2';
+                chordogram{2,i} = ct;
+                yes = 1;
+                continue;
+            end
+        end
+        if strcmp(ct,'5')
+            if pcb == cb && strcmp(pct,'2')
+                ct = 'sus2';
+                chordogram{2,i} = ct;
+                yes = 1;
+                continue;
+            end
+            if ncb == cb && strcmp(nct,'2')
+                ct = 'sus2';
+                chordogram{2,i} = ct;
+                yes = 1;
+                continue;
+            end
+        end
         if strcmp(ct,'5') || strcmp(ct,'2')|| strcmp(ct,'n')
             if pcb == cb && ~(strcmp(pct,'5') || strcmp(pct,'2')|| strcmp(pct,'n'))
                 ct = pct;
@@ -682,6 +735,10 @@ for i = 1:1:lenchordogram
     fprintf(fw, formatSpec2, s);
 end
 fclose(fw);
+
+% pause
+display('press enter to continue...');
+pause;
 
 display('backend -- dbn');
 % try DBN models for,

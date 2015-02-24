@@ -1,32 +1,32 @@
 % 1 2  3 4  5 6 7  8 9  10 11 12 13
 % C C# D D# E F F# G G# A  A# B  N
-function treble = num2bass(num)
+function bass = num2bass(num)
 
 switch num
+    case 0
+        bass = 'N';
     case 1
-        treble = 'C';
+        bass = 'C';
     case 2
-        treble = 'C#';
+        bass = 'C#';
     case 3
-        treble = 'D';
+        bass = 'D';
     case 4
-        treble = 'D#';
+        bass = 'D#';
     case 5
-        treble = 'E';
+        bass = 'E';
     case 6
-        treble = 'F';
+        bass = 'F';
     case 7
-        treble = 'F#';
+        bass = 'F#';
     case 8
-        treble = 'G';
+        bass = 'G';
     case 9
-        treble = 'G#';
+        bass = 'G#';
     case 10
-        treble = 'A';
+        bass = 'A';
     case 11
-        treble = 'A#';
+        bass = 'A#';
     case 12
-        treble = 'B';
-    case 13
-        treble = 'N';
+        bass = 'B';
 end

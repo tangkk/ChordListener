@@ -204,3 +204,56 @@
 % image(k(1:nchords),p,sfactor*Shv);
 % set(gca,'YDir','normal');
 % title('harmonic change matrix');
+
+% % if within a gestalt window ahead there's a non-zero bin, compensate the
+% % blank in the middle
+% wg = 20;
+% Sg = zeros(sizeS(1), sizeS(2));
+% for i = 1:1:sizeS(1)
+%     trackidx = 1;
+%     isblank = 0;
+%     for j = 1:1:sizeS(2)
+%         if S(i,j) > 0
+%             % compensate the gestalt
+%             if isblank == 1
+%                 lenBlank = j - trackidx;
+%                 if lenBlank <= wg
+%                     Sg(i,trackidx:j-1) = S(i,trackidx)*ones(1,lenBlank);
+%                 end
+%             end
+%             Sg(i,j) = S(i,j);
+%             isblank = 0;
+%             trackidx = j;
+%         else
+%             isblank = 1;
+%         end
+%     end
+% end
+% figure;
+% image(k,p,sfactor*Sg);
+% set(gca,'YDir','normal');
+% title('note gestalt salience matrix - 1');
+% % input from above, if a piece of salience is shorter than a gestalt window, ignore it
+% wg = 10;
+% for i = 1:1:sizeS(1)
+%     trackidx = 1;
+%     islight = 0;
+%     for j = 1:1:sizeS(2)
+%         if Sg(i,j) == 0
+%             if islight == 1;
+%                 lenLight = j - trackidx;
+%                 if lenLight <= wg
+%                     Sg(i,trackidx:j-1) = zeros(1,lenLight);
+%                 end
+%             end
+%             trackidx = j;
+%             islight = 0;
+%         else
+%             islight = 1;
+%         end
+%     end
+% end
+% figure;
+% image(k,p,sfactor*Sg);
+% set(gca,'YDir','normal');
+% title('note gestalt salience matrix - 2');
