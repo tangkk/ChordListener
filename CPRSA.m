@@ -1,9 +1,6 @@
-% this implements the machine listening method for catching every chord
-% and chord boundary within a piece of music
-% note that part of this algorithm reimplements the work by
-% M. Mauch - Mauch, M. (2010). Automatic chord transcription from audio using
-% computational models of musical context (Doctoral dissertation,
-% School of Electronic Engineering and Computer Science Queen Mary, University of London).
+% CPRSA - Chord Progression Recognition System A
+% This implements a machine listening method for recognizing the chords
+% and chord progression boundaries within a piece of music
 
 % ********************************************************** %
 % ********************* Input ****************************** %
@@ -16,7 +13,7 @@ audio = 'heidongli-1.mp3';
 path = [root audio];
 
 % ********************************************************** %
-% ********************* Front End *************************** %
+% ********************* Front End ************************** %
 % ********************************************************** %
 display('frontend -- from input to harmonic salience matrix');
 [x,fs] = audioread(path);
@@ -342,116 +339,9 @@ title('haromonic change moments');
 
 
 % ********************************************************** %
-% ********************* Mid End *************************** %
+% ********************* Mid End - A************************* %
 % ********************************************************** %
-display('midend -- various 12-bin grams or 1-bin grams');
-% compute bass and treble profiles (once for all time)
-gb = zeros(1,sizeS(1));
-gt = zeros(1,sizeS(1));
-gw = ones(1,sizeS(1));
-for i = 1:1:sizeS(1)
-    midiidx = i + 21 - 1;
-    if midiidx >= 21 && midiidx < 33
-        % y = a + bx with two points (21,0) and (33,1)
-        gb(i) = (1 - 33/12) + midiidx/12;
-    end
-    if midiidx >= 33 && midiidx <= 44
-        gb(i) = 1;
-    end
-    if midiidx > 44 && midiidx <= 55
-        % y = a + bx with two points (44,1) and (50,0.5)
-        gb(i) = (1+44/12) - midiidx/12;
-    end
-    if midiidx > 55
-        gb(i) = 0;
-    end
-end
-for i = 1:1:sizeS(1)
-    midiidx = i + 21 - 1;
-    if midiidx < 45
-        gt(i) = 0;
-    end
-    if midiidx >= 45 && midiidx < 56
-        % y = a + bx with two points (50,0.5) and (56,1)
-        gt(i) = (1/2 - 50/12) + midiidx/12;
-    end
-    if midiidx >= 56 && midiidx <= 68
-        gt(i) = 1;
-    end
-    if midiidx > 68 && midiidx <= 92
-        % y = a + bx with two points (68,1) and (92,0)
-        gt(i) = 92/24 - midiidx/24;
-    end
-end
-
-% compute the chromagram, bass chromagram and treble chromagram
-SS = Sh; % select the salience matrix to be used
-chromagram = zeros(12, sizeS(2));
-basschromagram = zeros(12, sizeS(2));
-treblechromagram = zeros(12, sizeS(2));
-for i = 1:1:12
-    for kk = 1:1:sizeS(1)/12
-        chromagram(i,:) = chromagram(i,:) + SS(i + 12*(kk-1),:)*gw(i + 12*(kk-1));
-        basschromagram(i,:) = basschromagram(i,:) + SS(i + 12*(kk-1),:)*gb(i + 12*(kk-1));
-        treblechromagram(i,:) = treblechromagram(i,:) + SS(i + 12*(kk-1),:)*gt(i + 12*(kk-1));
-    end
-end
-
-% normalize the chromagrams and transform them to C base
-for i = 1:1:sizeS(2)
-    if max(chromagram(:,i)) ~= 0
-        chromagram(:,i) = chromagram(:,i) / max(chromagram(:,i));
-        tmp = chromagram(:,i);
-        chromagram(:,i) = [tmp(4:end) ; tmp(1:3)];
-    end
-    if max(treblechromagram(:,i)) ~= 0
-        treblechromagram(:,i) = treblechromagram(:,i) / max(treblechromagram(:,i));
-        tmp = treblechromagram(:,i);
-        treblechromagram(:,i) = [tmp(4:end) ; tmp(1:3)];
-    end
-    if max(basschromagram(:,i)) ~= 0
-        basschromagram(:,i) = basschromagram(:,i) / max(basschromagram(:,i));
-        tmp = basschromagram(:,i);
-        basschromagram(:,i) = [tmp(4:end) ; tmp(1:3)];
-    end
-end
-
-% low-cut various chromagrams
-lowT = 0.1;
-chromagram(chromagram < lowT) = 0;
-treblechromagram(treblechromagram < lowT) = 0;
-basschromagram(basschromagram < lowT) = 0;
-
-% plot varoius chromagrams
-notenames = {'C','C#','D','D#','E','F','F#','G','G#','A','A#','B'};
-sizeCh = size(chromagram);
-pc = 1:sizeCh(1);
-kc = 1:sizeCh(2);
-T = sizeS(2); % the total number of time slices contained in the evidence
-t = ((hopsize/fs)*(1:T));
-plotsize = 1:T;
-sfactor = 100;
-figure;
-image(t(plotsize),pc,sfactor*chromagram(:,plotsize));
-set(gca,'YDir','normal');
-set(gca, 'YTick',1:12, 'YTickLabel', notenames);
-title('chromagram');
-xlabel('time(s)');
-ylabel('pitch class');
-figure;
-image(t(plotsize),pc,sfactor*basschromagram(:,plotsize));
-set(gca,'YDir','normal');
-set(gca, 'YTick',1:12, 'YTickLabel', notenames);
-title('basschromagram');
-xlabel('time(s)');
-ylabel('pitch class');
-figure;
-image(t(plotsize),pc,sfactor*treblechromagram(:,plotsize));
-set(gca,'YDir','normal');
-set(gca, 'YTick',1:12, 'YTickLabel', notenames);
-title('treblechromagram');
-xlabel('time(s)');
-ylabel('pitch class');
+display('midend-A -- uppergram and basegram');
 
 % compute basegram and uppergram (based on harmonic change matrix)
 sizeShv = size(Shv);
@@ -489,7 +379,7 @@ sfactor = 100;
 figure;
 image(ph,kh,sfactor*uppergram);
 set(gca,'YDir','normal');
-set(gca, 'YTick',1:12, 'YTickLabel', notenames);
+set(gca, 'YTick',0:12, 'YTickLabel', notenames);
 title('uppergram');
 figure;
 plot(ph,basegram(1,:),'o');
@@ -497,7 +387,7 @@ title('basegram');
 set(gca, 'YTick',0:12, 'YTickLabel', notenames);
 
 % ********************************************************** %
-% ********************* Back End *************************** %
+% ********************* Back End - A************************ %
 % ********************************************************** %
 
 % try chord recognition tree method (or chord dictionary method)
@@ -524,7 +414,7 @@ set(gca, 'YTick',0:12, 'YTickLabel', notenames);
 % on the bass
 % if miss, then run every other pitch through this tree, pick a hit with
 % root closest to the bass to form a slash chord
-display('backend -- chordtree');
+display('backend-A -- chordtree');
 nchordtype = 16;
 chordtree = cell(2,nchordtype);
 chordtree{1,1} = [4,7];
@@ -718,6 +608,8 @@ fw = fopen([audio(1:end-4) '.ct.txt'],'w');
 formatSpec1 = '%s';
 formatSpec2 = '%s\n';
 sumhop = 0;
+T = sizeS(2); % the total number of time slices contained in the evidence
+t = ((hopsize/fs)*(1:T));
 lenchordogram = length(chordogram);
 for i = 1:1:lenchordogram
     if i < lenchordogram
@@ -737,301 +629,5 @@ for i = 1:1:lenchordogram
 end
 fclose(fw);
 
-% pause
-display('press enter to continue...');
-pause;
-
-display('backend -- dbn');
-% try DBN models for,
-% chord progression inference,
-% based on,
-% chromagram observations.
-%
-% naming conventions:
-% T = treble progression, B = bass progression,
-% TC = treble chromagram, BC = bass chromagram (both Lmax normalized)
-% Ch = chord progression(Ch(k) = T(k)/B(k), slash chord representation)
-%
-% the 1st model: 2 separate hidden markov chains
-% treble structure:
-% T(i-1) -> T(i)
-%   |        |
-%   v        v
-% TC(i-1)   TC(i)
-%
-% bass structure:
-% B(i-1) -> B(i)
-%   |        |
-%   v        v
-% BC(i-1)   BC(i)
-% 
-% chord progression computation:
-% Ch = T/B
-
-% ******************************************* %
-% treble model
-ss = 2;
-intra = zeros(ss);
-intra(1,2) = 1;
-inter = zeros(ss);
-inter(1,1) = 1;
-hnodes = 1;
-onodes = 2;
-dnodes = 1;
-cnodes = 2;
-eclass1 = [1 2];
-eclass2 = [3 2];
-eclass = [eclass1 eclass2];
-% consider the maj min treble model, as well as sus2 and power treble model
-Qt = 37;
-% 12 pitch-classes, each treble has a mean and cov for each pitch class
-O = 12;
-ns = [Qt O];
-bnet = mk_dbn(intra, inter, ns, 'discrete', dnodes, 'observed', onodes, 'eclass1', eclass1, 'eclass2', eclass2);
-% set CPDs: CPD{1} <- prior; CPD{2} <- emission; CPD{3} <- transition
-% let's order the trebles in such way:
-% 1 2  3 4  5 6 7  8 9  10 11 12 13 14  15 16  17 18 19  20 21  22 23  24
-% C C# D D# E F F# G G# A  A# B  Cm C#m Dm D#m Em Fm F#m Gm G#m Am A#m Bm
-% 25 26  27 28  29 30 31  32 33  34  35  36 (37)
-% C2 C#2 D2 D#2 E2 F2 F#2 G2 G#2 A2  A#2 B2 N
-% 37 38  39 40  41 42 43  44 45  46  47  48 49
-% C5 C#5 D5 D#5 E5 F5 F#5 G5 G#5 A5  A#5 B5 N
-% let's order the pitch classes in such way:
-% 1 2  3 4  5 6 7  8 9  10 11 12
-% C C# D D# E F F# G G# A  A# B
-
-% prior probabilities
-prior = normalise(ones(1,Qt));
-% emission probabilities
-mu = zeros(O,Qt);
-sigma = zeros(O,O,Qt);
-for i = 1:1:12
-    muimaj = zeros(1,12);
-    muimin = zeros(1,12);
-    mui2 = zeros(1,12);
-    mui5 = zeros(1,12);
-    
-    % major treble
-    muimaj(mod(i+0-1,12)+1) = 1;
-    muimaj(mod(i+4-1,12)+1) = 1;
-    muimaj(mod(i+7-1,12)+1) = 1;
-    
-    % minor treble
-    muimin(mod(i+0-1,12)+1) = 1;
-    muimin(mod(i+3-1,12)+1) = 1;
-    muimin(mod(i+7-1,12)+1) = 1;
-    
-    % sus2 treble
-    mui2(mod(i+0-1,12)+1) = 1;
-    mui2(mod(i+2-1,12)+1) = 1;
-    mui2(mod(i+7-1,12)+1) = 1;
-    
-    % power treble
-    mui5(mod(i+0-1,12)+1) = 1;
-    mui5(mod(i+7-1,12)+1) = 1;
-    
-    mu(:,i) = muimaj;
-    mu(:,i+12) = muimin;
-    mu(:,i+24) = mui2;
-%     mu(:,i+36) = mui5;
-end
-mu(:,Qt) = ones(1,12); % the last one is no-treble
-for i = 1:1:Qt
-    sigma(:,:,i) = diag(ones(1,12))*0.2;
-end
-
-% transition probabilities
-transmat = ones(Qt,Qt);
-st = 500; % the self transition factor, with larger value yields stronger smoothy.
-for i = 1:1:Qt
-    transmat(i,i) = transmat(i,i)*st;
-end
-transmat = mk_stochastic(transmat);
-
-bnet.CPD{1} = tabular_CPD(bnet, 1, prior); % uniform distribution for prior
-bnet.CPD{2} = gaussian_CPD(bnet, 2, 'mean', mu, 'cov', sigma); % gaussian emission probs
-bnet.CPD{3} = tabular_CPD(bnet, 3, transmat); % a reasonable transition matrix
-
-jengine = smoother_engine(jtree_2TBN_inf_engine(bnet));
-evidence = cell(ss,T);
-% use real evidence from chromagram
-for i = 1:1:T
-    ev = treblechromagram(:,i);
-    evidence(onodes,i) = num2cell(ev,1);
-end
-[jengine,llj] = enter_evidence(jengine, evidence);
-mpe = find_mpe(jengine, evidence);
-
-treblenames = {'C','C#','D','D#','E','F','F#','G','G#','A','A#','B',...
-    'Cm','C#m','Dm','D#m','Em','Fm','F#m','Gm','G#m','Am','A#m','Bm',...
-    'C2','C#2','D2','D#2','E2','F2','F#2','G2','G#2','A2','A#2','B2',...
-    'N'};
-%     'C5','C#5','D5','D#5','E5','F5','F#5','G5','G#5','A5','A#5','B5',...
-
-figure;
-plot(t(plotsize),cell2mat(mpe(1,plotsize)));
-title('treble progression');
-xlabel('time(s)');
-ylabel('treble');
-set(gca, 'YTick',1:length(treblenames), 'YTickLabel', treblenames);
-display('treble mpe');
-display(mpe(1,plotsize));
-
-% ******************************************* %
-% bass model
-ss = 2;
-intra = zeros(ss);
-intra(1,2) = 1;
-inter = zeros(ss);
-inter(1,1) = 1;
-hnodes = 1;
-onodes = 2;
-dnodes = 1;
-cnodes = 2;
-eclass1 = [1 2];
-eclass2 = [3 2];
-eclass = [eclass1 eclass2];
-% consider the bass C, C#, ... B as well as N
-Qb = 13;
-% 12 pitch-classes, each treble has a mean and cov for each pitch class
-O = 12;
-ns = [Qb O];
-bnet = mk_dbn(intra, inter, ns, 'discrete', dnodes, 'observed', onodes, 'eclass1', eclass1, 'eclass2', eclass2);
-% set CPDs: CPD{1} <- prior; CPD{2} <- emission; CPD{3} <- transition
-% let's order the basses in such way:
-% 1 2  3 4  5 6 7  8 9  10 11 12 13
-% C C# D D# E F F# G G# A  A# B  N
-% prior probabilities
-prior = normalise(ones(1,Qb));
-% emission probabilities
-mu = zeros(O,Qb);
-sigma = zeros(O,O,Qb);
-for i = 1:1:12
-    mubass = zeros(1,12);
-    mubass(i) = 1;
-    mu(:,i) = mubass;
-end
-mu(:,Qb) = ones(1,12); % the last one is no-bass
-
-for i = 1:1:Qb
-    sigma(:,:,i) = diag(ones(1,12))*0.2;
-end
-
-% transition probabilities
-transmat = ones(Qb,Qb);
-st = 500; % the self transition factor, with larger value yields stronger smoothy.
-for i = 1:1:Qb
-    transmat(i,i) = transmat(i,i)*st;
-end
-transmat = mk_stochastic(transmat);
-
-bnet.CPD{1} = tabular_CPD(bnet, 1, prior); % uniform distribution for prior
-bnet.CPD{2} = gaussian_CPD(bnet, 2, 'mean', mu, 'cov', sigma); % gaussian emission probs
-bnet.CPD{3} = tabular_CPD(bnet, 3, transmat); % a reasonable transition matrix
-
-jengine = smoother_engine(jtree_2TBN_inf_engine(bnet));
-evidence = cell(ss,T);
-% use real evidence from chromagram
-for i = 1:1:T
-    ev = basschromagram(:,i);
-    evidence(onodes,i) = num2cell(ev,1);
-end
-[jengine,llj] = enter_evidence(jengine, evidence);
-mpeb = find_mpe(jengine, evidence);
-
-bassnames = {'C','C#','D','D#','E','F','F#','G','G#','A','A#','B',...
-    'N'};
-
-figure;
-plot(t(plotsize),cell2mat(mpeb(1,plotsize)));
-title('bass progression');
-xlabel('time(s)');
-ylabel('bass');
-set(gca, 'YTick',1:length(bassnames), 'YTickLabel', bassnames);
-display('bass mpe');
-display(mpeb(1,plotsize));
-
-% ******************************************* %
-% chord model
-lenChord = length(mpe);
-chordprogression = cell(1,lenChord);
-treblebassprogression = cell(2,lenChord);
-for i = 1:1:lenChord
-    % simply print slash chords except for maj, min
-    tnum = mpe{1,i};
-    bnum = mpeb{1,i};
-    treblebassprogression{1,i} = num2treble(tnum);
-    treblebassprogression{2,i} = num2bass(bnum);
-    % map sus2 to maj
-    if tnum >= 25 && tnum <= 36
-        tnum = tnum - 24;
-    end
-    tname = num2treble(tnum);
-    bname = num2bass(bnum);
-    if tnum == Qt || bnum == Qb
-        chordprogression{1,i} = 'N';
-    elseif mod(tnum - 1,12) + 1 == bnum
-        chordprogression{1,i} = tname;
-    else
-        chordprogression{1,i} = [tname '/' bname];
-    end
-end
-display('chord progression');
-display(chordprogression(1,plotsize));
-
-% smooth the chord progression
-lenChordPrint = 100;
-chordprint = cell(2,lenChordPrint);
-oldchord = chordprogression{1,1};
-chordcount = 1;
-chordidx = 1;
-st = 10;
-for i = 2:1:lenChord
-    newchord = chordprogression{1,i};
-    if strcmp(newchord,oldchord) == 1
-        chordcount = chordcount + 1;
-        if i == lenChord
-            chordprint(:,chordidx) = {oldchord, chordcount};
-        end
-    else
-        if chordcount <= st && chordidx > 1
-            tmp = chordprint(:,chordidx - 1);
-            tmp{2} = tmp{2} + chordcount;
-            chordprint(:,chordidx - 1) = tmp;
-            chordcount = 1;
-        else
-            chordprint(:,chordidx) = {oldchord, chordcount};
-            chordidx = chordidx + 1;
-            chordcount = 1;
-        end
-    end
-    oldchord = newchord;
-end
-display('chordprint');
-display(chordprint);
-
-% write results
-fw = fopen([audio(1:end-4) '.dbn.txt'],'w');
-formatSpec1 = '%s';
-formatSpec2 = '%s\n';
-sumhop = 0;
-for i = 1:1:lenChordPrint
-    if ~isempty(chordprint{2,i})
-        if sumhop == 0
-            s = [chordprint{1,i} '===>' num2str(0)];
-        else
-            s = [chordprint{1,i} '===>' num2str(t(sumhop))];
-        end
-        fprintf(fw, formatSpec1, s);
-        sumhop = sumhop + chordprint{2,i};
-        s = ['-' num2str(t(sumhop))];
-        fprintf(fw, formatSpec2, s);
-    else
-        break;
-    end
-end
-fclose(fw);
-
-% ******************************************* %
-% play sound
-% sound(x(1:hopsize*length(plotsize)),fs);
+% ********************* End of System A ******************** %
+display('end of system A...');
