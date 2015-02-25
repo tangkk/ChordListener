@@ -10,8 +10,9 @@
 % ********************************************************** %
 close all;
 clear;
+clc;
 root = '../AudioSamples/';
-audio = 'iloveyouso-1.mp3';
+audio = 'heidongli-1.mp3';
 path = [root audio];
 
 % ********************************************************** %
@@ -275,7 +276,7 @@ plot(1:length(Sb),Sb,'*');
 title('rough bassline');
 
 % harmonic change filter (detect harmonic change boundaries)
-Sh = zeros(sizeS(1),sizeS(2)); % harmonic smooth matrix (one slice per col)
+Sh = zeros(sizeS(1),sizeS(2)); % harmonic bounded salience matrix (one slice per col)
 Shv = zeros(sizeS(1),sizeS(2)); % harmonic change matrix (one chord per col)
 Shc = zeros(1,sizeS(2)); % harmonic change moments
 ht = ot;
@@ -334,7 +335,7 @@ title('harmonic bounded salience matrix');
 figure;
 image(k(1:nchords),p,sfactor*Shv);
 set(gca,'YDir','normal');
-title('harmonic matrix');
+title('harmonic change matrix');
 figure;
 plot(1:length(Shc),Shc,'o');
 title('haromonic change moments');
