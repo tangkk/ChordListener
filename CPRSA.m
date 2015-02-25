@@ -604,6 +604,8 @@ end
 chordogram = chordogram(:,2:end-1);
 
 % write results
+maxOutNum = 200;
+outputstrings = cell(1,maxOutNum);
 fw = fopen([audio(1:end-4) '.ct.txt'],'w');
 formatSpec1 = '%s';
 formatSpec2 = '%s\n';
@@ -611,7 +613,9 @@ sumhop = 0;
 T = sizeS(2); % the total number of time slices contained in the evidence
 t = ((hopsize/fs)*(1:T));
 lenchordogram = length(chordogram);
+outidx = 1;
 for i = 1:1:lenchordogram
+    outstring = '';
     if i < lenchordogram
         if strcmp(chordogram{3,i}, chordogram{3,i+1}) == 1  && strcmp(chordogram{2,i}, chordogram{2,i+1}) == 1
             continue;
@@ -623,11 +627,52 @@ for i = 1:1:lenchordogram
         s = [chordogram{3,i} chordogram{2,i} '===>' num2str(t(sumhop))];
     end
     fprintf(fw, formatSpec1, s);
+    outstring = s;
     sumhop = Shc(i);
     s = ['-' num2str(t(sumhop))];
-    fprintf(fw, formatSpec2, s);
+    if i < lenchordogram
+        fprintf(fw, formatSpec2, s);
+    else
+        fprintf(fw, formatSpec1, s);
+    end
+    outstring = strcat(outstring,s);
+    outputstrings{outidx} = outstring;
+    outidx = outidx + 1;
 end
+outputstrings = outputstrings(1:outidx-1);
 fclose(fw);
+
+% visualize chord progression
+lenOut = length(outputstrings);
+chordprogression = cell(1,lenOut);
+chordboundaries = zeros(1,lenOut+1);
+for i = 1:1:lenOut
+    tline = outputstrings{i};
+    s1 = strsplit(tline, '===>');
+    chordname = s1{1};
+    setime = s1{2};
+    s2 = strsplit(setime, '-');
+    starttime = s2{1};
+    endtime = s2{2};
+    chordprogression{i} = chordname;
+    chordboundaries(i) = str2double(starttime);
+    chordboundaries(i+1) = str2double(endtime);
+end
+figure;
+hold on;
+Y = -10:0.1:10;
+for i = 1:1:lenOut+1
+    X = chordboundaries(i)*ones(size(Y));
+    plot(X,Y);
+end
+hold off;
+div = (max(Y) - min(Y) - 1) / lenOut;
+for i = 1:1:lenOut
+%     x = (chordboundaries(i)+ chordboundaries(i+1)) / 2;
+    x = chordboundaries(i);
+    text(x,10 - i*div,chordprogression{i});
+end
+
 
 % ********************* End of System A ******************** %
 display('end of system A...');
