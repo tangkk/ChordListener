@@ -9,7 +9,7 @@ close all;
 clear;
 clc;
 root = '../AudioSamples/';
-audio = 'heidongli-1.mp3';
+audio = 'putongpengyou-1.mp3';
 path = [root audio];
 
 % ********************************************************** %
@@ -117,12 +117,6 @@ image(ks,ps,sfactor*Spre);
 set(gca,'YDir','normal');
 title('preliminary salience matrix');
 
-% calculate spectral centroid
-Sec = Spre(:,1:100);
-SX = sum(Sec,2);
-sc = round(sum(SX.*(1:length(SX))') / sum(SX));
-scw = sc/(length(SX));
-
 % noise reduction process
 sizeNS = size(Sc);
 nt = 0.1;
@@ -163,7 +157,9 @@ end
 S = Spres.*Sprec;
 sizeS = size(S);
 for j = 1:1:sizeNS(2)
-    S(:,j) = S(:,j) / max(S(:,j)); 
+    if max(S(:,j)) > 0
+        S(:,j) = S(:,j) / max(S(:,j)); 
+    end
 end
 sfactor = 100;
 p = 1:sizeS(1);
@@ -172,12 +168,6 @@ figure;
 image(k,p,sfactor*S);
 set(gca,'YDir','normal');
 title('note salience matrix');
-
-% calculate spectral centroid
-Sec = S(:,1:100);
-SX = sum(Sec,2);
-sc = round(sum(SX.*(1:length(SX))') / sum(SX));
-scw = sc/(length(SX));
 
 % input from above, if a piece of salience is shorter than a gestalt window, ignore it
 wg = 10;
@@ -372,19 +362,20 @@ for j = 1:1:sizeShv(2)
     end
 end
 
-notenames = {'N','C','C#','D','D#','E','F','F#','G','G#','A','A#','B'};
+treblenotenames = {'C','C#','D','D#','E','F','F#','G','G#','A','A#','B'};
 ph = 1:sizeShv(2);
 kh = 1:12;
 sfactor = 100;
 figure;
 image(ph,kh,sfactor*uppergram);
 set(gca,'YDir','normal');
-set(gca, 'YTick',0:12, 'YTickLabel', notenames);
+set(gca, 'YTick',1:12, 'YTickLabel', treblenotenames);
 title('uppergram');
+bassnotenames = {'N','C','C#','D','D#','E','F','F#','G','G#','A','A#','B'};
 figure;
 plot(ph,basegram(1,:),'o');
 title('basegram');
-set(gca, 'YTick',0:12, 'YTickLabel', notenames);
+set(gca, 'YTick',0:12, 'YTickLabel', bassnotenames);
 
 % ********************************************************** %
 % ********************* Back End - A************************ %
@@ -606,6 +597,7 @@ chordogram = chordogram(:,2:end-1);
 % write results
 maxOutNum = 200;
 outputstrings = cell(1,maxOutNum);
+
 fw = fopen([audio(1:end-4) '.ct.txt'],'w');
 formatSpec1 = '%s';
 formatSpec2 = '%s\n';
@@ -613,6 +605,8 @@ sumhop = 0;
 T = sizeS(2); % the total number of time slices contained in the evidence
 t = ((hopsize/fs)*(1:T));
 lenchordogram = length(chordogram);
+chordboundaries = zeros(2,lenchordogram+1);
+chordboundaries(2,:) = ones(1,lenchordogram+1);
 outidx = 1;
 for i = 1:1:lenchordogram
     outstring = '';
@@ -638,14 +632,16 @@ for i = 1:1:lenchordogram
     outstring = strcat(outstring,s);
     outputstrings{outidx} = outstring;
     outidx = outidx + 1;
+    chordboundaries(2,outidx) = sumhop;
 end
 outputstrings = outputstrings(1:outidx-1);
+chordboundaries = chordboundaries(:,1:outidx);
 fclose(fw);
 
 % visualize chord progression
 lenOut = length(outputstrings);
-chordprogression = cell(1,lenOut);
-chordboundaries = zeros(1,lenOut+1);
+chordprogression = cell(3,lenOut);
+
 for i = 1:1:lenOut
     tline = outputstrings{i};
     s1 = strsplit(tline, '===>');
@@ -654,25 +650,303 @@ for i = 1:1:lenOut
     s2 = strsplit(setime, '-');
     starttime = s2{1};
     endtime = s2{2};
-    chordprogression{i} = chordname;
-    chordboundaries(i) = str2double(starttime);
-    chordboundaries(i+1) = str2double(endtime);
+    if strcmp(chordname(2),'#')
+        bassname = chordname(1:2);
+        treblename = chordname(3:end);
+    else
+        bassname = chordname(1);
+        treblename = chordname(2:end);
+    end
+    chordprogression{1,i} = chordname;
+    chordprogression{2,i} = bassname;
+    chordprogression{3,i} = treblename;
+    chordboundaries(1,i) = str2double(starttime);
+    chordboundaries(1,i+1) = str2double(endtime);
 end
 figure;
 hold on;
 Y = -10:0.1:10;
 for i = 1:1:lenOut+1
-    X = chordboundaries(i)*ones(size(Y));
+    X = chordboundaries(1,i)*ones(size(Y));
     plot(X,Y);
 end
 hold off;
 div = (max(Y) - min(Y) - 1) / lenOut;
 for i = 1:1:lenOut
 %     x = (chordboundaries(i)+ chordboundaries(i+1)) / 2;
-    x = chordboundaries(i);
-    text(x,10 - i*div,chordprogression{i});
+    x = chordboundaries(1,i);
+    text(x,10 - i*div,chordprogression{1,i});
+end
+xlabel('time');
+ylabel('chord');
+title('chordprogression vs. time');
+
+figure;
+hold on;
+Y = -10:0.1:10;
+for i = 1:1:lenOut+1
+    X = chordboundaries(2,i)*ones(size(Y));
+    plot(X,Y);
+end
+hold off;
+div = (max(Y) - min(Y) - 1) / lenOut;
+for i = 1:1:lenOut
+%     x = (chordboundaries(i)+ chordboundaries(i+1)) / 2;
+    x = chordboundaries(2,i);
+    text(x,10 - i*div,chordprogression{1,i});
+end
+xlabel('slice');
+ylabel('chord');
+title('chordprogression vs. slices');
+
+% ********************************************************** %
+% ********************* Feedback Once - A******************* %
+% ********************************************************** %
+
+% feedback the chordboundaries information to note salience matrix
+% and update the uppergram
+display('feedback-A -- use chord boundaries information to do it again');
+newbasegram = zeros(1,lenOut);
+for i = 1:1:lenOut
+    newbasegram(i) = bass2num(chordprogression{2,i});
 end
 
+newuppergram = zeros(12,lenOut);
+upg = zeros(12,1);
+ut = 0.5;
+for i = 1:1:lenOut
+    % update note salience matrix in terms of boundaries window
+    wb = chordboundaries(2,i):chordboundaries(2,i+1);
+    sm = sum(S(:,wb),2);
+    sm(sm < ut) = 0;
+    if max(sm) > 0
+        sm = sm ./ max(sm);
+    end
+    upg = sum(reshape(sm,12,6),2);
+    upg = [upg(4:end);upg(1:3)];
+    newuppergram(:,i) = upg;
+end
+treblenotenames = {'C','C#','D','D#','E','F','F#','G','G#','A','A#','B'};
+ph = 1:lenOut;
+kh = 1:12;
+sfactor = 100;
+figure;
+image(ph,kh,sfactor*newuppergram);
+set(gca,'YDir','normal');
+set(gca, 'YTick',1:12, 'YTickLabel', treblenotenames);
+title('newuppergram');
+bassnotenames = {'N','C','C#','D','D#','E','F','F#','G','G#','A','A#','B'};
+figure;
+plot(ph,newbasegram,'o');
+title('newbasegram');
+set(gca, 'YTick',0:12, 'YTickLabel', bassnotenames);
+
+% ****** feedback back end ****** %
+nchordtype = 16;
+chordtree = cell(2,nchordtype);
+chordtree{1,1} = [4,7];
+chordtree{2,1} = 'maj';
+chordtree{1,2} = [4,8];
+chordtree{2,2} = 'aug';
+chordtree{1,3} = [4,10];
+chordtree{2,3} = 'dom7';
+chordtree{1,4} = [4,11];
+chordtree{2,4} = 'maj7';
+chordtree{1,5} = [3,7];
+chordtree{2,5} = 'min';
+chordtree{1,6} = [3,6];
+chordtree{2,6} = 'dim';
+chordtree{1,7} = [3,8];
+chordtree{2,7} = 'maj/3';
+chordtree{1,8} = [3,10];
+chordtree{2,8} = 'min7';
+chordtree{1,9} = [3,11];
+chordtree{2,9} = 'minmaj7';
+chordtree{1,10} = [5,9];
+chordtree{2,10} = 'maj/5';
+chordtree{1,11} = [5,7];
+chordtree{2,11} = 'sus4';
+chordtree{1,12} = [2,7];
+chordtree{2,12} = 'sus2';
+chordtree{1,13} = 3;
+chordtree{2,13} = 'min';
+chordtree{1,14} = 4;
+chordtree{2,14} = 'maj';
+chordtree{1,15} = 7;
+chordtree{2,15} = '5';
+chordtree{1,16} = 2;
+chordtree{2,16} = '2';
+% walk the tree using basegram and uppergram
+newchordogram = cell(3,lenOut);
+for j = 1:1:lenOut
+    bass = newbasegram(1,j);
+    upper = newuppergram(:,j);
+    ismatchout = 0;
+    for i = 1:1:nchordtype
+        ismatchout = 0;
+        ismatchin = 1;
+        chordentry = chordtree{1,i};
+        lenentry = length(chordentry);
+        for jj = 1:1:lenentry
+            matchpos = mod(bass+chordentry(jj)-1,12) + 1;
+            if upper(matchpos) == 0
+                ismatchin = 0;
+            end
+        end
+        if ismatchin == 1
+            ismatchout = 1;
+            % convert maj/3 and maj/5 chord to correct bass
+            if i == 7
+                bass = mod(bass-4-1,12)+1;
+            end
+            if i == 10
+                bass = mod(bass-7-1,12)+1;
+            end
+            newchordogram{1,j} = bass;
+            newchordogram{2,j} = chordtree{2,i};
+            newchordogram{3,j} = num2bass(bass);
+            break;
+        end
+    end
+    if ismatchout == 0
+        newchordogram{1,j} = bass;
+        newchordogram{2,j} = 'n';
+        newchordogram{3,j} = num2bass(bass);
+    end
+end
+
+% gestalt newchordogram (merge chord types as human would do)
+% only keep maj, min, aug, dim, dom, minmaj, /3 and /5
+% if 2, 5, n type, merge to the nearest maj or min type with same bass
+%   if there is no nearest maj or min, merge n to 2 or 5, if both 2 and 5
+%   exist in the neigbourhood, merge them to be sus2
+% if /3 and /5, merge from nearest whatever type with same bass
+% if sus2, sus4, merge to maj with same bass
+newchordogram = [{0;'N';'N'} newchordogram {0;'N';'N'}];
+yes = 1;
+while yes
+    yes = 0;
+    for i = 2:1:length(newchordogram)-1
+        cb = newchordogram{1,i};
+        ct = newchordogram{2,i};
+        pcb = newchordogram{1,i-1};
+        pct = newchordogram{2,i-1};
+        ncb = newchordogram{1,i+1};
+        nct = newchordogram{2,i+1};
+        if strcmp(ct,'n')
+            if pcb == cb && ~(strcmp(pct,'n'))
+                ct = pct;
+                newchordogram{2,i} = ct;
+                yes = 1;
+                continue;
+            end
+            if ncb == cb && ~(strcmp(nct,'n'))
+                ct = nct;
+                newchordogram{2,i} = ct;
+                yes = 1;
+                continue;
+            end
+        end
+        if strcmp(ct,'2')
+            if pcb == cb && strcmp(pct,'5')
+                ct = 'sus2';
+                newchordogram{2,i} = ct;
+                yes = 1;
+                continue;
+            end
+            if ncb == cb && strcmp(nct,'5')
+                ct = 'sus2';
+                newchordogram{2,i} = ct;
+                yes = 1;
+                continue;
+            end
+        end
+        if strcmp(ct,'5')
+            if pcb == cb && strcmp(pct,'2')
+                ct = 'sus2';
+                newchordogram{2,i} = ct;
+                yes = 1;
+                continue;
+            end
+            if ncb == cb && strcmp(nct,'2')
+                ct = 'sus2';
+                newchordogram{2,i} = ct;
+                yes = 1;
+                continue;
+            end
+        end
+        if strcmp(ct,'5') || strcmp(ct,'2')|| strcmp(ct,'n')
+            if pcb == cb && ~(strcmp(pct,'5') || strcmp(pct,'2')|| strcmp(pct,'n'))
+                ct = pct;
+                newchordogram{2,i} = ct;
+                yes = 1;
+                continue;
+            end
+            if ncb == cb && ~(strcmp(nct,'5') || strcmp(nct,'2')|| strcmp(nct,'n'))
+                ct = nct;
+                newchordogram{2,i} = ct;
+                yes = 1;
+                continue;
+            end
+        end
+        if strcmp(ct,'maj/3')
+            if mod(pcb-4-1,12)+1 == cb
+                newchordogram{1,i-1} = cb;
+                newchordogram{2,i-1} = 'maj/3';
+                newchordogram{3,i-1} = num2bass(cb);
+                yes = 1;
+                continue;
+            end
+            if mod(ncb-4-1,12)+1 == cb
+                newchordogram{1,i+1} = cb;
+                newchordogram{2,i+1} = 'maj/3';
+                newchordogram{3,i+1} = num2bass(cb);
+                yes = 1;
+                continue;
+            end
+        end
+        if strcmp(ct,'maj/5')
+            if mod(pcb-7-1,12)+1 == cb
+                newchordogram{1,i-1} = cb;
+                newchordogram{2,i-1} = 'maj/5';
+                newchordogram{3,i-1} = num2bass(cb);
+                yes = 1;
+                continue;
+            end
+            if mod(ncb-7-1,12)+1 == cb
+                newchordogram{1,i+1} = cb;
+                newchordogram{2,i+1} = 'maj/5';
+                newchordogram{3,i+1} = num2bass(cb);
+                yes = 1;
+                continue;
+            end
+        end
+        if strcmp(ct,'sus2') || strcmp(ct,'sus4')
+            newchordogram{2,i} = 'maj';
+            yes = 1;
+            continue;
+        end
+    end
+end
+newchordogram = newchordogram(:,2:end-1);
+
+figure;
+hold on;
+Y = -10:0.1:10;
+for i = 1:1:lenOut+1
+    X = chordboundaries(1,i)*ones(size(Y));
+    plot(X,Y);
+end
+hold off;
+div = (max(Y) - min(Y) - 1) / lenOut;
+for i = 1:1:lenOut
+%     x = (chordboundaries(i)+ chordboundaries(i+1)) / 2;
+    x = chordboundaries(1,i);
+    text(x,10 - i*div,strcat(newchordogram{3,i},newchordogram{2,i}));
+end
+xlabel('time');
+ylabel('chord');
+title('updated chordprogression vs. time');
 
 % ********************* End of System A ******************** %
 display('end of system A...');

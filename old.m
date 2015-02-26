@@ -1,5 +1,11 @@
 % some old codes here that might be useful
 
+% % calculate spectral centroid
+% Sec = S(:,1:100);
+% SX = sum(Sec,2);
+% sc = round(sum(SX.*(1:length(SX))') / sum(SX));
+% scw = sc/(length(SX));
+
 % rmeanS = zeros(sizeSpre);
 % rstdS = zeros(sizeSpre);
 % rmeanC = zeros(sizeSpre);
