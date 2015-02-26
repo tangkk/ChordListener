@@ -9,7 +9,7 @@ close all;
 clear;
 clc;
 root = '../AudioSamples/';
-audio = 'heidongli-1.mp3';
+audio = 'tuihou-1.mp3';
 path = [root audio];
 
 % ********************************************************** %
@@ -169,51 +169,30 @@ image(k,p,sfactor*S);
 set(gca,'YDir','normal');
 title('note salience matrix');
 
-% input from above, if a piece of salience is shorter than a gestalt window, ignore it
-wg = 10;
-Sgneg = zeros(sizeS(1), sizeS(2));
-for i = 1:1:sizeS(1)
-    trackidx = 1;
-    islight = 0;
-    for j = 1:1:sizeS(2)
-        if S(i,j) == 0
-            if islight == 1;
-                lenLight = j - trackidx;
-                if lenLight <= wg
-                    Sgneg(i,trackidx:j-1) = zeros(1,lenLight);
-                end
-            end
-            trackidx = j;
-            islight = 0;
-        else
-            Sgneg(i,j) = S(i,j);
-            islight = 1;
-        end
-    end
-end
-figure;
-image(k,p,sfactor*Sgneg);
-set(gca,'YDir','normal');
-title('note gestalt salience matrix - 1');
-
 % if within a gestalt window ahead there's a non-zero bin, compensate the
-% blank in the middle
-wg = 20;
-Sgpos = zeros(sizeS(1), sizeS(2));
+% blank in between, the length of the gestalt window vary according to
+% the accumulated non-blank length, but with maximum value of 20 slices
+wgmax = 20;
+wpg = 0;
+Sg = zeros(sizeS(1), sizeS(2));
 for i = 1:1:sizeS(1)
     trackidx = 1;
     isblank = 0;
     for j = 1:1:sizeS(2)
-        if Sgneg(i,j) > 0
+        if S(i,j) > 0
             % compensate the gestalt
             if isblank == 1
                 lenBlank = j - trackidx;
-                if lenBlank <= wg
-                    Sgpos(i,trackidx:j-1) = Sgneg(i,trackidx)*ones(1,lenBlank);
+                if lenBlank <= min(wgmax, wpg)
+                    Sg(i,trackidx:j-1) = mean(S(i,max(trackidx-wpg,1):trackidx))*ones(1,lenBlank);
+                    wpg = wpg + lenBlank;
+                else
+                    wpg = 0;
                 end
             end
-            Sgpos(i,j) = Sgneg(i,j);
+            Sg(i,j) = S(i,j);
             isblank = 0;
+            wpg = wpg + 1;
             trackidx = j;
         else
             isblank = 1;
@@ -221,24 +200,50 @@ for i = 1:1:sizeS(1)
     end
 end
 figure;
-image(k,p,sfactor*Sgpos);
+image(k,p,sfactor*Sg);
+set(gca,'YDir','normal');
+title('note gestalt salience matrix - 1');
+% input from above, if a piece of salience is shorter than a gestalt window, ignore it
+wng = 10;
+for i = 1:1:sizeS(1)
+    trackidx = 1;
+    islight = 0;
+    for j = 1:1:sizeS(2)
+        if Sg(i,j) == 0
+            if islight == 1;
+                lenLight = j - trackidx;
+                if lenLight <= wng
+                    Sg(i,trackidx:j-1) = zeros(1,lenLight);
+                end
+            end
+            trackidx = j;
+            islight = 0;
+        else
+            islight = 1;
+        end
+    end
+end
+figure;
+image(k,p,sfactor*Sg);
 set(gca,'YDir','normal');
 title('note gestalt salience matrix - 2');
 
-Sg = Sgpos; % gestalt salience matrix
-
 % onset filter (roughly detect the note onsets)
 So = zeros(sizeS(1), sizeS(2)); % onset matrix
-ot = 0.2;
+ot = 0.0;
+wo = 5;
 for i = 1:1:sizeS(1)
     for j = 1:1:sizeS(2)
+        hi = 0;
         if j == 1
-            hi = Sg(i,j) - 0;
+            hi = max(Sg(i,j:min(j+10,sizeS(2))));
         else
-            hi = Sg(i,j) - Sg(i,j-1);
+            if Sg(i,j) > 0 && Sg(i,j-1) == 0
+                hi = max(Sg(i,j:min(j+2*wo,sizeS(2))));
+            end
         end
         if hi > ot
-            So(i,j) = hi;
+            So(i,j:min(j+wo,sizeS(2))) = hi;
         end
     end
 end
@@ -249,31 +254,55 @@ title('onset matrix');
 
 % bassline filter (roughly set the dynamic bass bounds)
 Sb = zeros(1, sizeS(2)); % bassline vector
-bt = 0.3;
+bt = 0.0;
+wb = 10;
+cb = 1;
 for j = 1:1:sizeS(2)
     for i = 1:1:sizeS(1)
-        if Sg(i,j) >= bt
+        if Sg(i,j) > bt
             Sb(j) = i;
             break;
+        end
+        if i == sizeS(1) % continue the bound if nothing found
+            if j > 1
+                Sb(j) = Sb(j-1);
+            end
+        end
+    end
+    if j > 1
+        if Sb(j) == Sb(j-1)
+            cb = cb+1;
+        else
+            if cb < wb % if so, gestalize the outliers
+                Sb(j - cb:j-1) = Sb(max(j-cb-1,1));
+            end
+            cb = 1;
         end
     end
 end
 figure;
 plot(1:length(Sb),Sb,'*');
+ylim([1 sizeS(1)]);
 title('rough bassline');
 
 % harmonic change filter (detect harmonic change boundaries)
 Sh = zeros(sizeS(1),sizeS(2)); % harmonic bounded salience matrix (one slice per col)
 Shv = zeros(sizeS(1),sizeS(2)); % harmonic change matrix (one chord per col)
 Shc = zeros(1,sizeS(2)); % harmonic change moments
-ht = ot;
+ht = 0.1;
 whs = 0;
 whe = 0;
 shidx = 1;
 firsttime = 1;
+oldonset = 1;
+newonset = 1;
 for j = 1:1:sizeS(2)
-    for i = 1:1:min(Sb(j)+5,sizeS(1))
-        if (So(i,j) > ht && (j - whs > 10 || firsttime == 1)) || j == sizeS(2)
+    for i = 1:1:min(Sb(j),sizeS(1)) % search upper bounded by Sb
+        if (So(i,j) > ht && (j - whs > 0 || firsttime == 1)) || j == sizeS(2)
+            newonset = i;
+            if newonset == oldonset && j < sizeS(2)
+                break;
+            end
             if firsttime == 1
                 firsttime = 0;
                 whs = j;
@@ -287,11 +316,11 @@ for j = 1:1:sizeS(2)
                 whe = j-1;
                 wh = whs:whe;
             end
-            for ii = 1:1:sizeS(1)
+            for ii = oldonset:1:sizeS(1) % count from oldonset (elsewise bass inference)
                 gesiiwh = mean(Sg(ii,wh));
-                if gesiiwh > 0.10
+%                 if gesiiwh > 0.10
                     Sh(ii,wh) = ones(1,length(wh))*gesiiwh;
-                end
+%                 end
             end
             % normalize the content within harmonic window in terms of col
             for jj = whs:1:whe
@@ -299,7 +328,7 @@ for j = 1:1:sizeS(2)
                 if max(tmp) ~= 0
                     tmp = tmp / max(tmp);
                 end
-                tmp(tmp < 0.2) = 0;
+                tmp(tmp < 0.1) = 0;
                 Sh(:,jj) = tmp;
             end
             % fill the harmonic change vector
@@ -307,6 +336,7 @@ for j = 1:1:sizeS(2)
             Shc(shidx) = whe;
             shidx = shidx + 1;
             whs = j;
+            oldonset = newonset;
             break;
         end
     end
