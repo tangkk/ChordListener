@@ -9,7 +9,7 @@ close all;
 clear;
 clc;
 root = '../AudioSamples/';
-audio = 'putongpengyou-1.mp3';
+audio = 'heidongli-1.mp3';
 path = [root audio];
 
 % ********************************************************** %
@@ -23,7 +23,7 @@ x = (x(:,1)+x(:,2))/2;
 x = resample(x, 1, DSR);
 fs = fs / DSR;
 songMax = max(abs(x));
-x = x/songMax;
+x = x / songMax;
 len = length(x);
 
 % implement a size 4096 hamming windowed, hop size 512 STFT spectrogram
@@ -498,13 +498,13 @@ while yes
         ncb = chordogram{1,i+1};
         nct = chordogram{2,i+1};
         if strcmp(ct,'n')
-            if pcb == cb && ~(strcmp(pct,'n'))
+            if pcb == cb && ~(strcmp(pct,'n'))&& ~(strcmp(pct,'maj/3'))&& ~(strcmp(pct,'maj/5'))
                 ct = pct;
                 chordogram{2,i} = ct;
                 yes = 1;
                 continue;
             end
-            if ncb == cb && ~(strcmp(nct,'n'))
+            if ncb == cb && ~(strcmp(nct,'n'))&& ~(strcmp(nct,'maj/3'))&& ~(strcmp(nct,'maj/5'))
                 ct = nct;
                 chordogram{2,i} = ct;
                 yes = 1;
@@ -540,13 +540,13 @@ while yes
             end
         end
         if strcmp(ct,'5') || strcmp(ct,'2')|| strcmp(ct,'n')
-            if pcb == cb && ~(strcmp(pct,'5') || strcmp(pct,'2')|| strcmp(pct,'n'))
+            if pcb == cb && ~(strcmp(pct,'5') || strcmp(pct,'2')|| strcmp(pct,'n')||strcmp(pct,'maj/3')||strcmp(pct,'maj/5'))
                 ct = pct;
                 chordogram{2,i} = ct;
                 yes = 1;
                 continue;
             end
-            if ncb == cb && ~(strcmp(nct,'5') || strcmp(nct,'2')|| strcmp(nct,'n'))
+            if ncb == cb && ~(strcmp(nct,'5') || strcmp(nct,'2')|| strcmp(nct,'n')||strcmp(nct,'maj/3')||strcmp(nct,'maj/5'))
                 ct = nct;
                 chordogram{2,i} = ct;
                 yes = 1;
@@ -554,14 +554,14 @@ while yes
             end
         end
         if strcmp(ct,'maj/3')
-            if mod(pcb-4-1,12)+1 == cb
+            if mod(pcb-4-1,12)+1 == cb && ~strcmp(pct,'maj/3') && ~strcmp(pct,'maj/5')
                 chordogram{1,i-1} = cb;
                 chordogram{2,i-1} = 'maj/3';
                 chordogram{3,i-1} = num2bass(cb);
                 yes = 1;
                 continue;
             end
-            if mod(ncb-4-1,12)+1 == cb
+            if mod(ncb-4-1,12)+1 == cb && ~strcmp(nct,'maj/3') && ~strcmp(nct,'maj/5')
                 chordogram{1,i+1} = cb;
                 chordogram{2,i+1} = 'maj/3';
                 chordogram{3,i+1} = num2bass(cb);
@@ -570,14 +570,14 @@ while yes
             end
         end
         if strcmp(ct,'maj/5')
-            if mod(pcb-7-1,12)+1 == cb
+            if mod(pcb-7-1,12)+1 == cb && ~strcmp(pct,'maj/3') && ~strcmp(pct,'maj/5')
                 chordogram{1,i-1} = cb;
                 chordogram{2,i-1} = 'maj/5';
                 chordogram{3,i-1} = num2bass(cb);
                 yes = 1;
                 continue;
             end
-            if mod(ncb-7-1,12)+1 == cb
+            if mod(ncb-7-1,12)+1 == cb && ~strcmp(nct,'maj/3') && ~strcmp(nct,'maj/5')
                 chordogram{1,i+1} = cb;
                 chordogram{2,i+1} = 'maj/5';
                 chordogram{3,i+1} = num2bass(cb);
@@ -640,7 +640,7 @@ fclose(fw);
 
 % visualize chord progression
 lenOut = length(outputstrings);
-chordprogression = cell(3,lenOut);
+chordprogression = cell(4,lenOut);
 
 for i = 1:1:lenOut
     tline = outputstrings{i};
@@ -652,14 +652,28 @@ for i = 1:1:lenOut
     endtime = s2{2};
     if strcmp(chordname(2),'#')
         bassname = chordname(1:2);
+        bassnum = bass2num(bassname);
         treblename = chordname(3:end);
     else
         bassname = chordname(1);
+        bassnum = bass2num(bassname);
         treblename = chordname(2:end);
+    end
+    % transform /3 and /5 back to original bassname and bassnum
+    if length(treblename) > 1
+        if strcmp(treblename(end-1:end),'/3')
+            bassnum = mod(bassnum+4-1,12) + 1;
+            bassname = num2bass(bassnum);
+        end
+        if strcmp(treblename(end-1:end),'/5')
+            bassnum = mod(bassnum+7-1,12) + 1;
+            bassname = num2bass(bassnum);
+        end
     end
     chordprogression{1,i} = chordname;
     chordprogression{2,i} = bassname;
     chordprogression{3,i} = treblename;
+    chordprogression{4,i} = bassnum;
     chordboundaries(1,i) = str2double(starttime);
     chordboundaries(1,i+1) = str2double(endtime);
 end
@@ -708,12 +722,12 @@ title('chordprogression vs. slices');
 display('feedback-A -- use chord boundaries information to do it again');
 newbasegram = zeros(1,lenOut);
 for i = 1:1:lenOut
-    newbasegram(i) = bass2num(chordprogression{2,i});
+    newbasegram(i) = chordprogression{4,i};
 end
 
 newuppergram = zeros(12,lenOut);
 upg = zeros(12,1);
-ut = 0.5;
+ut = 1;
 for i = 1:1:lenOut
     % update note salience matrix in terms of boundaries window
     wb = chordboundaries(2,i):chordboundaries(2,i+1);
@@ -834,13 +848,13 @@ while yes
         ncb = newchordogram{1,i+1};
         nct = newchordogram{2,i+1};
         if strcmp(ct,'n')
-            if pcb == cb && ~(strcmp(pct,'n'))
+            if pcb == cb && ~(strcmp(pct,'n'))&& ~(strcmp(pct,'maj/3'))&& ~(strcmp(pct,'maj/5'))
                 ct = pct;
                 newchordogram{2,i} = ct;
                 yes = 1;
                 continue;
             end
-            if ncb == cb && ~(strcmp(nct,'n'))
+            if ncb == cb && ~(strcmp(nct,'n'))&& ~(strcmp(nct,'maj/3'))&& ~(strcmp(nct,'maj/5'))
                 ct = nct;
                 newchordogram{2,i} = ct;
                 yes = 1;
@@ -876,13 +890,13 @@ while yes
             end
         end
         if strcmp(ct,'5') || strcmp(ct,'2')|| strcmp(ct,'n')
-            if pcb == cb && ~(strcmp(pct,'5') || strcmp(pct,'2')|| strcmp(pct,'n'))
+            if pcb == cb && ~(strcmp(pct,'5') || strcmp(pct,'2')|| strcmp(pct,'n')||strcmp(pct,'maj/3')||strcmp(pct,'maj/5'))
                 ct = pct;
                 newchordogram{2,i} = ct;
                 yes = 1;
                 continue;
             end
-            if ncb == cb && ~(strcmp(nct,'5') || strcmp(nct,'2')|| strcmp(nct,'n'))
+            if ncb == cb && ~(strcmp(nct,'5') || strcmp(nct,'2')|| strcmp(nct,'n')||strcmp(nct,'maj/3')||strcmp(nct,'maj/5'))
                 ct = nct;
                 newchordogram{2,i} = ct;
                 yes = 1;
@@ -890,14 +904,14 @@ while yes
             end
         end
         if strcmp(ct,'maj/3')
-            if mod(pcb-4-1,12)+1 == cb
+            if mod(pcb-4-1,12)+1 == cb && ~strcmp(pct,'maj/3') && ~strcmp(pct,'maj/5')
                 newchordogram{1,i-1} = cb;
                 newchordogram{2,i-1} = 'maj/3';
                 newchordogram{3,i-1} = num2bass(cb);
                 yes = 1;
                 continue;
             end
-            if mod(ncb-4-1,12)+1 == cb
+            if mod(ncb-4-1,12)+1 == cb && ~strcmp(nct,'maj/3') && ~strcmp(nct,'maj/5')
                 newchordogram{1,i+1} = cb;
                 newchordogram{2,i+1} = 'maj/3';
                 newchordogram{3,i+1} = num2bass(cb);
@@ -906,14 +920,14 @@ while yes
             end
         end
         if strcmp(ct,'maj/5')
-            if mod(pcb-7-1,12)+1 == cb
+            if mod(pcb-7-1,12)+1 == cb && ~strcmp(pct,'maj/3') && ~strcmp(pct,'maj/5')
                 newchordogram{1,i-1} = cb;
                 newchordogram{2,i-1} = 'maj/5';
                 newchordogram{3,i-1} = num2bass(cb);
                 yes = 1;
                 continue;
             end
-            if mod(ncb-7-1,12)+1 == cb
+            if mod(ncb-7-1,12)+1 == cb && ~strcmp(nct,'maj/3') && ~strcmp(nct,'maj/5')
                 newchordogram{1,i+1} = cb;
                 newchordogram{2,i+1} = 'maj/5';
                 newchordogram{3,i+1} = num2bass(cb);
