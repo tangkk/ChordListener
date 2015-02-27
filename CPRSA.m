@@ -169,6 +169,7 @@ image(k,p,sfactor*S);
 set(gca,'YDir','normal');
 title('note salience matrix');
 
+% gestalize process
 % if within a gestalt window ahead there's a non-zero bin, compensate the
 % blank in between, the length of the gestalt window vary according to
 % the accumulated non-blank length, but with maximum value of 20 slices
@@ -231,7 +232,7 @@ title('note gestalt salience matrix - 2');
 % onset filter (roughly detect the note onsets)
 So = zeros(sizeS(1), sizeS(2)); % onset matrix
 ot = 0.0;
-wo = 5;
+wo = 10;
 for i = 1:1:sizeS(1)
     for j = 1:1:sizeS(2)
         hi = 0;
@@ -239,7 +240,7 @@ for i = 1:1:sizeS(1)
             hi = max(Sg(i,j:min(j+10,sizeS(2))));
         else
             if Sg(i,j) > 0 && Sg(i,j-1) == 0
-                hi = max(Sg(i,j:min(j+2*wo,sizeS(2))));
+                hi = max(Sg(i,j:min(j+wo,sizeS(2))));
             end
         end
         if hi > ot
@@ -283,6 +284,7 @@ end
 figure;
 plot(1:length(Sb),Sb,'*');
 ylim([1 sizeS(1)]);
+xlim([1 sizeS(2)]);
 title('rough bassline');
 
 % harmonic change filter (detect harmonic change boundaries)
@@ -297,7 +299,7 @@ firsttime = 1;
 oldonset = 1;
 newonset = 1;
 for j = 1:1:sizeS(2)
-    for i = 1:1:min(Sb(j),sizeS(1)) % search upper bounded by Sb
+    for i = 1:1:min(Sb(j)+6,sizeS(1)) % search upper bounded by Sb + 5
         if (So(i,j) > ht && (j - whs > 0 || firsttime == 1)) || j == sizeS(2)
             newonset = i;
             if newonset == oldonset && j < sizeS(2)
@@ -974,23 +976,69 @@ while yes
 end
 newchordogram = newchordogram(:,2:end-1);
 
+% combine the same items
+prevchord = strcat(newchordogram{3,1},newchordogram{2,1});
+outchordogram = cell(1,lenOut);
+outchordogram{1} = prevchord;
+outboundaries = zeros(2,lenOut+1);
+outboundaries(:,1) = chordboundaries(:,1);
+outidx = 2;
+for i = 2:1:lenOut
+    curchord = strcat(newchordogram{3,i},newchordogram{2,i});
+    if strcmp(curchord,prevchord)
+        continue;
+    else
+        outchordogram{outidx} = curchord;
+        outboundaries(:,outidx) = chordboundaries(:,i);
+        outidx = outidx + 1;
+    end
+    prevchord = curchord;
+end
+outchordogram = outchordogram(1:outidx-1);
+outboundaries(:,outidx) = chordboundaries(:,end);
+outboundaries = outboundaries(:,1:outidx);
+
 figure;
 hold on;
 Y = -10:0.1:10;
-for i = 1:1:lenOut+1
-    X = chordboundaries(1,i)*ones(size(Y));
+for i = 1:1:length(outboundaries)
+    X = outboundaries(1,i)*ones(size(Y));
     plot(X,Y);
 end
 hold off;
-div = (max(Y) - min(Y) - 1) / lenOut;
-for i = 1:1:lenOut
-%     x = (chordboundaries(i)+ chordboundaries(i+1)) / 2;
-    x = chordboundaries(1,i);
-    text(x,10 - i*div,strcat(newchordogram{3,i},newchordogram{2,i}));
+div = (max(Y) - min(Y) - 1) / length(outchordogram);
+for i = 1:1:length(outchordogram)
+    x = outboundaries(1,i);
+    text(x,10 - i*div,outchordogram{i});
 end
 xlabel('time');
 ylabel('chord');
 title('updated chordprogression vs. time');
+
+fw = fopen([audio(1:end-4) '.ct.txt'],'w');
+formatSpec1 = '%s';
+formatSpec2 = '%s\n';
+sumhop = 0;
+T = sizeS(2); % the total number of time slices contained in the evidence
+t = ((hopsize/fs)*(1:T));
+lenchordogram = length(outchordogram);
+for i = 1:1:lenchordogram
+    if sumhop == 0
+        s = [outchordogram{i} '===>' num2str(0)];
+    else
+        s = [outchordogram{i} '===>' num2str(t(sumhop))];
+    end
+    fprintf(fw, formatSpec1, s);
+    outstring = s;
+    sumhop = outboundaries(2,i+1);
+    s = ['-' num2str(t(sumhop))];
+    if i < lenchordogram
+        fprintf(fw, formatSpec2, s);
+    else
+        fprintf(fw, formatSpec1, s);
+    end
+end
+fclose(fw);
 
 % ********************* End of System A ******************** %
 display('end of system A...');
