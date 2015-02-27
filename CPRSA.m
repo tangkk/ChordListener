@@ -9,7 +9,7 @@ close all;
 clear;
 clc;
 root = '../AudioSamples/';
-audio = 'Dont_Break_My_Heart-1.mp3';
+audio = 'tuihou-1.mp3';
 path = [root audio];
 
 % ********************************************************** %
@@ -712,6 +712,28 @@ while yes
 end
 chordogram = chordogram(:,2:end-1);
 
+% combine the same items
+prevchord = strcat(chordogram{3,1},chordogram{2,1});
+outchordogram = cell(1,length(chordogram));
+outchordogram{1} = prevchord;
+chordboundaries = zeros(1,length(chordogram)+1);
+chordboundaries(1) = Shc(1);
+outidx = 2;
+for i = 2:1:length(chordogram)
+    curchord = strcat(chordogram{3,i},chordogram{2,i});
+    if strcmp(curchord,prevchord)
+        continue;
+    else
+        outchordogram{outidx} = curchord;
+        chordboundaries(outidx) = Shc(i);
+        outidx = outidx + 1;
+    end
+    prevchord = curchord;
+end
+outchordogram = outchordogram(1:outidx-1);
+chordboundaries(outidx) = Shc(end);
+chordboundaries = chordboundaries(1:outidx);
+
 % write results
 maxOutNum = 200;
 outputstrings = cell(1,maxOutNum);
@@ -719,30 +741,20 @@ outputstrings = cell(1,maxOutNum);
 fw = fopen([audio(1:end-4) '.ct.txt'],'w');
 formatSpec1 = '%s';
 formatSpec2 = '%s\n';
-sumhop = 0;
 T = sizeS(2); % the total number of time slices contained in the evidence
 t = ((hopsize/fs)*(1:T));
-lenchordogram = length(chordogram);
-chordboundaries = zeros(2,lenchordogram+1);
-chordboundaries(2,:) = ones(1,lenchordogram+1);
+lenoutchordogram = length(outchordogram);
 outidx = 1;
-for i = 1:1:lenchordogram
-    outstring = '';
-    if i < lenchordogram
-        if strcmp(chordogram{3,i}, chordogram{3,i+1}) == 1  && strcmp(chordogram{2,i}, chordogram{2,i+1}) == 1
-            continue;
-        end
-    end
-    if sumhop == 0
-        s = [chordogram{3,i} chordogram{2,i} '===>' num2str(0)];
+for i = 1:1:lenoutchordogram
+    if i == 1
+        s = [outchordogram{i} '===>' num2str(0)];
     else
-        s = [chordogram{3,i} chordogram{2,i} '===>' num2str(t(sumhop))];
+        s = [outchordogram{i} '===>' num2str(t(chordboundaries(i)))];
     end
     fprintf(fw, formatSpec1, s);
     outstring = s;
-    sumhop = Shc(i);
-    s = ['-' num2str(t(sumhop))];
-    if i < lenchordogram
+    s = ['-' num2str(t(chordboundaries(i+1)))];
+    if i < lenoutchordogram
         fprintf(fw, formatSpec2, s);
     else
         fprintf(fw, formatSpec1, s);
@@ -750,10 +762,8 @@ for i = 1:1:lenchordogram
     outstring = strcat(outstring,s);
     outputstrings{outidx} = outstring;
     outidx = outidx + 1;
-    chordboundaries(2,outidx) = sumhop;
 end
 outputstrings = outputstrings(1:outidx-1);
-chordboundaries = chordboundaries(:,1:outidx);
 fclose(fw);
 
 % visualize chord progression
@@ -804,21 +814,18 @@ for i = 1:1:lenOut
     chordprogression{2,i} = bassname;
     chordprogression{3,i} = treblename;
     chordprogression{4,i} = bassnum;
-    chordboundaries(1,i) = str2double(starttime);
-    chordboundaries(1,i+1) = str2double(endtime);
 end
 figure;
 hold on;
 Y = -10:0.1:10;
 for i = 1:1:lenOut+1
-    X = chordboundaries(1,i)*ones(size(Y));
+    X = t(chordboundaries(i)*ones(size(Y)));
     plot(X,Y);
 end
 hold off;
 div = (max(Y) - min(Y) - 1) / lenOut;
 for i = 1:1:lenOut
-%     x = (chordboundaries(i)+ chordboundaries(i+1)) / 2;
-    x = chordboundaries(1,i);
+    x = t(chordboundaries(i));
     text(x,10 - i*div,chordprogression{1,i});
 end
 xlabel('time');
@@ -829,20 +836,18 @@ figure;
 hold on;
 Y = -10:0.1:10;
 for i = 1:1:lenOut+1
-    X = chordboundaries(2,i)*ones(size(Y));
+    X = chordboundaries(i)*ones(size(Y));
     plot(X,Y);
 end
 hold off;
 div = (max(Y) - min(Y) - 1) / lenOut;
 for i = 1:1:lenOut
-%     x = (chordboundaries(i)+ chordboundaries(i+1)) / 2;
-    x = chordboundaries(2,i);
+    x = chordboundaries(i);
     text(x,10 - i*div,chordprogression{1,i});
 end
 xlabel('slice');
 ylabel('chord');
 title('chordprogression vs. slices');
-
 display('press enter to continue with feedback stage...');
 pause;
 % ********************************************************** %
@@ -862,7 +867,7 @@ upg = zeros(12,1);
 ut = 1;
 for i = 1:1:lenOut
     % update note salience matrix in terms of boundaries window
-    wb = chordboundaries(2,i):chordboundaries(2,i+1);
+    wb = chordboundaries(i):chordboundaries(i+1);
     sm = sum(S(:,wb),2);
     sm(sm < ut) = 0;
     if max(sm) > 0
@@ -1151,8 +1156,8 @@ newchordogram = newchordogram(:,2:end-1);
 prevchord = strcat(newchordogram{3,1},newchordogram{2,1});
 outchordogram = cell(1,lenOut);
 outchordogram{1} = prevchord;
-outboundaries = zeros(2,lenOut+1);
-outboundaries(:,1) = chordboundaries(:,1);
+outboundaries = zeros(1,lenOut+1);
+outboundaries(1) = chordboundaries(1);
 outidx = 2;
 for i = 2:1:lenOut
     curchord = strcat(newchordogram{3,i},newchordogram{2,i});
@@ -1160,14 +1165,14 @@ for i = 2:1:lenOut
         continue;
     else
         outchordogram{outidx} = curchord;
-        outboundaries(:,outidx) = chordboundaries(:,i);
+        outboundaries(outidx) = chordboundaries(i);
         outidx = outidx + 1;
     end
     prevchord = curchord;
 end
 outchordogram = outchordogram(1:outidx-1);
-outboundaries(:,outidx) = chordboundaries(:,end);
-outboundaries = outboundaries(:,1:outidx);
+outboundaries(outidx) = chordboundaries(end);
+outboundaries = outboundaries(1:outidx);
 
 figure;
 hold on;
@@ -1179,31 +1184,28 @@ end
 hold off;
 div = (max(Y) - min(Y) - 1) / length(outchordogram);
 for i = 1:1:length(outchordogram)
-    x = outboundaries(1,i);
+    x = outboundaries(i);
     text(x,10 - i*div,outchordogram{i});
 end
 xlabel('time');
 ylabel('chord');
-title('updated chordprogression vs. time');
+title('updated chordprogression vs. slice');
 
 fw = fopen([audio(1:end-4) '.ct.txt'],'w');
 formatSpec1 = '%s';
 formatSpec2 = '%s\n';
-sumhop = 0;
 T = sizeS(2); % the total number of time slices contained in the evidence
 t = ((hopsize/fs)*(1:T));
-lenchordogram = length(outchordogram);
-for i = 1:1:lenchordogram
-    if sumhop == 0
+lenoutchordogram = length(outchordogram);
+for i = 1:1:lenoutchordogram
+    if i == 1
         s = [outchordogram{i} '===>' num2str(0)];
     else
-        s = [outchordogram{i} '===>' num2str(t(sumhop))];
+        s = [outchordogram{i} '===>' num2str(t(outboundaries(i)))];
     end
     fprintf(fw, formatSpec1, s);
-    outstring = s;
-    sumhop = outboundaries(2,i+1);
-    s = ['-' num2str(t(sumhop))];
-    if i < lenchordogram
+    s = ['-' num2str(t(outboundaries(i+1)))];
+    if i < lenoutchordogram
         fprintf(fw, formatSpec2, s);
     else
         fprintf(fw, formatSpec1, s);
