@@ -9,7 +9,7 @@ close all;
 clear;
 clc;
 root = '../AudioSamples/';
-audio = 'tuihou-1.mp3';
+audio = 'haoting-1.mp3';
 path = [root audio];
 
 % ********************************************************** %
@@ -422,23 +422,35 @@ set(gca, 'YTick',0:12, 'YTickLabel', bassnotenames);
 % 1->3->7 maj7         1,5,12           4,11
 % 1->3b->5 min         1,4,8            3,7
 % 1->3b->5b dim        1,4,7            3,6
-% 1->3b->6b maj/3       1,4,9           3,8
+% 1->3b->6b maj/3      1,4,9            3,8
 % 1->3b->7b min7       1,4,11           3,10
 % 1->3b->7 minmaj7     1,4,12           3,11
 % 1->4->6 maj/5        1,6,10           5,9
 % 1->4->5 sus4         1,6,8            5,7
 % 1->2->5 sus2         1,3,8            2,7
+% 1->2->4 min/7        1,3,6            2,5
+% 1->2->4# maj/7       1,3,7            2,6
+% 1->1#->4 maj/7+      1,2,6            1,5
+% 1->2->7b maj/2       1,3,11           2,10
+% 1->3->6 maj6         1,5,10           4,9
+% 1->3b->6 min6        1,4,10           3,9
 % 1->3b min            1,4              3
 % 1->3 maj             1,5              4
 % 1->5 5               1,8              7
 % 1->2 2               1,3              2
+% 1->4 4               1,6              5
+% 1->4# 4#             1,7              6
+% 1->6b 6b             1,9              8
+% 1->6 6               1,10             9
+% 1->7b 7b             1,11             10
+% 1->7 7               1,12             11
 % default N            x,x,x            x,x
 % run the bass through this tree, if hit, then that's the chord rooted
 % on the bass
 % if miss, then run every other pitch through this tree, pick a hit with
 % root closest to the bass to form a slash chord
 display('backend-A -- chordtree');
-nchordtype = 16;
+nchordtype = 28;
 chordtree = cell(2,nchordtype);
 chordtree{1,1} = [4,7];
 chordtree{2,1} = 'maj';
@@ -464,16 +476,43 @@ chordtree{1,11} = [5,7];
 chordtree{2,11} = 'sus4';
 chordtree{1,12} = [2,7];
 chordtree{2,12} = 'sus2';
-chordtree{1,13} = 3;
-chordtree{2,13} = 'min';
-chordtree{1,14} = 4;
-chordtree{2,14} = 'maj';
-chordtree{1,15} = 7;
-chordtree{2,15} = '5';
-chordtree{1,16} = 2;
-chordtree{2,16} = '2';
+chordtree{1,13} = [2,5];
+chordtree{2,13} = 'min/7';
+chordtree{1,14} = [2,6];
+chordtree{2,14} = 'maj/7';
+chordtree{1,15} = [1,5];
+chordtree{2,15} = 'maj/7+';
+chordtree{1,16} = [2,10];
+chordtree{2,16} = 'maj/2';
+chordtree{1,17} = [4,9];
+chordtree{2,17} = 'maj6';
+chordtree{1,18} = [3,9];
+chordtree{2,18} = 'min6';
+chordtree{1,19} = 3;
+chordtree{2,19} = 'min';
+chordtree{1,20} = 4;
+chordtree{2,20} = 'maj';
+chordtree{1,21} = 7;
+chordtree{2,21} = '5';
+chordtree{1,22} = 2;
+chordtree{2,22} = '2';
+chordtree{1,23} = 5;
+chordtree{2,23} = '4';
+chordtree{1,24} = 6;
+chordtree{2,24} = '4#';
+chordtree{1,25} = 8;
+chordtree{2,25} = '6b';
+chordtree{1,26} = 9;
+chordtree{2,26} = '6';
+chordtree{1,27} = 10;
+chordtree{2,27} = '7b';
+chordtree{1,28} = 11;
+chordtree{2,28} = '7';
+
 % walk the tree using basegram and uppergram
-chordogram = cell(3,sizeShv(2));
+% chordogram: 1st row: bass num; 2st row: treble type;
+% 3st row: treble root; 4th row: chord entry index
+chordogram = cell(4,sizeShv(2));
 for j = 1:1:sizeShv(2)
     bass = basegram(1,j);
     upper = uppergram(:,j);
@@ -491,136 +530,166 @@ for j = 1:1:sizeShv(2)
         end
         if ismatchin == 1
             ismatchout = 1;
-            % convert maj/3 and maj/5 chord to correct bass
-            if i == 7
-                bass = mod(bass-4-1,12)+1;
+            % convert slash chords to correct treble name, keep bass num
+            upperbass = bass;
+            if i == 7 % maj/3
+                upperbass = mod(bass-4-1,12)+1;
             end
-            if i == 10
-                bass = mod(bass-7-1,12)+1;
+            if i == 10 % maj/5
+                upperbass = mod(bass-7-1,12)+1;
+            end
+            if i == 13 % min/7
+                upperbass = mod(bass-10-1,12)+1;
+            end
+            if i == 14 % maj/7
+                upperbass = mod(bass-10-1,12)+1;
+            end
+            if i == 15 % maj/7+
+                upperbass = mod(bass-11-1,12)+1;
+            end
+            if i == 16 % maj/2
+                upperbass = mod(bass-2-1,12)+1;
             end
             chordogram{1,j} = bass;
             chordogram{2,j} = chordtree{2,i};
-            chordogram{3,j} = num2bass(bass);
+            chordogram{3,j} = num2bass(upperbass);
+            chordogram{4,j} = i;
             break;
         end
     end
     if ismatchout == 0
         chordogram{1,j} = bass;
-        chordogram{2,j} = 'n';
+        chordogram{2,j} = '0';
         chordogram{3,j} = num2bass(bass);
+        chordogram{4,j} = 0;
     end
 end
 
-% gestalt chordogram (merge chord types as human would do)
-% only keep maj, min, aug, dim, dom, minmaj, /3 and /5
-% if 2, 5, n type, merge to the nearest maj or min type with same bass
-%   if there is no nearest maj or min, merge n to 2 or 5, if both 2 and 5
-%   exist in the neigbourhood, merge them to be sus2
-% if /3 and /5, merge from nearest whatever type with same bass
-% if sus2, sus4, merge to maj with same bass
-chordogram = [{0;'N';'N'} chordogram {0;'N';'N'}];
+% gestaltize chordogram ---
+% only keep triad, seventh and slash chords
+% if diad type, merge to the nearest triad or seventh type with same bass
+% if there is no nearest triad or seventh types, merge diads to try to form one
+chordogram = [{0;'N';'N';0} chordogram {0;'N';'N';0}];
 yes = 1;
 while yes
     yes = 0;
     for i = 2:1:length(chordogram)-1
         cb = chordogram{1,i};
         ct = chordogram{2,i};
+        ctn = chordogram{3,i};
+        cte = chordogram{4,i};
         pcb = chordogram{1,i-1};
         pct = chordogram{2,i-1};
+        pctn = chordogram{3,i-1};
+        pcte = chordogram{4,i-1};
         ncb = chordogram{1,i+1};
         nct = chordogram{2,i+1};
-        if strcmp(ct,'n')
-            if pcb == cb && ~(strcmp(pct,'n'))&& ~(strcmp(pct,'maj/3'))&& ~(strcmp(pct,'maj/5'))
-                ct = pct;
-                chordogram{2,i} = ct;
+        nctn = chordogram{3,i+1};
+        ncte = chordogram{4,i+1};
+        % merge diad with nearest triad or seventh with same bass
+        if (str2double(ct(1))) >= 0  % this indicates diad
+            if pcb == cb && ~(str2double(pct(1)) >=0)
+                chordogram{2,i} = pct;
+                chordogram{3,i} = pctn;
+                chordogram{4,i} = pcte;
                 yes = 1;
                 continue;
             end
-            if ncb == cb && ~(strcmp(nct,'n'))&& ~(strcmp(nct,'maj/3'))&& ~(strcmp(nct,'maj/5'))
-                ct = nct;
-                chordogram{2,i} = ct;
+            % if other diads are near by, try to merge them
+            if pcb == cb && (str2double(pct(1)) >=0)
+                tri = sort([pcte cte]);
+                ismatchout = 0;
+                for ci = 1:1:length(chordtree)
+                    ctri = chordtree{1,ci};
+                    if length(ctri) > 1
+                        if ctri(1) == tri(1) && ctri(2) == tri(2)
+                            % there's a triad match
+                            upperbass = bass;
+                            if ci == 7 % maj/3
+                                upperbass = mod(cb-4-1,12)+1;
+                            end
+                            if ci == 10 % maj/5
+                                upperbass = mod(cb-7-1,12)+1;
+                            end
+                            if ci == 13 % min/7
+                                upperbass = mod(cb-10-1,12)+1;
+                            end
+                            if ci == 14 % maj/7
+                                upperbass = mod(cb-10-1,12)+1;
+                            end
+                            if ci == 15 % maj/7+
+                                upperbass = mod(cb-11-1,12)+1;
+                            end
+                            if ci == 16 % maj/2
+                                upperbass = mod(cb-2-1,12)+1;
+                            end
+                            chordogram{2,i} = chordtree{2,ci};
+                            chordogram{3,i} = num2bass(upperbass);
+                            chordogram{4,i} = ci;
+                            ismatchout = 1;
+                            break;
+                        end
+                    end
+                end
+                if ismatchout == 0
+                    % if there isn't a triad match, create a new label
+                    chordogram{2,i} = strcat(ct,pct);
+                end
                 yes = 1;
                 continue;
             end
-        end
-        if strcmp(ct,'2')
-            if pcb == cb && strcmp(pct,'5')
-                ct = 'sus2';
-                chordogram{2,i} = ct;
+            
+            if ncb == cb && ~(str2double(nct(1)) >=0)
+                chordogram{2,i} = nct;
+                chordogram{3,i} = nctn;
+                chordogram{4,i} = ncte;
                 yes = 1;
                 continue;
             end
-            if ncb == cb && strcmp(nct,'5')
-                ct = 'sus2';
-                chordogram{2,i} = ct;
+            
+            % if other diads are near by, try to merge them
+            if ncb == cb && (str2double(nct(1)) >=0)
+                tri = sort([ncte cte]);
+                ismatchout = 0;
+                for ci = 1:1:length(chordtree)
+                    ctri = chordtree{1,ci};
+                    if length(ctri) > 1
+                        if ctri(1) == tri(1) && ctri(2) == tri(2)
+                            % there's a triad match
+                            upperbass = bass;
+                            if ci == 7 % maj/3
+                                upperbass = mod(cb-4-1,12)+1;
+                            end
+                            if ci == 10 % maj/5
+                                upperbass = mod(cb-7-1,12)+1;
+                            end
+                            if ci == 13 % min/7
+                                upperbass = mod(cb-10-1,12)+1;
+                            end
+                            if ci == 14 % maj/7
+                                upperbass = mod(cb-10-1,12)+1;
+                            end
+                            if ci == 15 % maj/7+
+                                upperbass = mod(cb-11-1,12)+1;
+                            end
+                            if ci == 16 % maj/2
+                                upperbass = mod(cb-2-1,12)+1;
+                            end
+                            chordogram{2,i} = chordtree{2,ci};
+                            chordogram{3,i} = num2bass(upperbass);
+                            chordogram{4,i} = ci;
+                            ismatchout = 1;
+                            break;
+                        end
+                    end
+                end
+                if ismatchout == 0
+                    % if there isn't a triad match, create a new label
+                    chordogram{2,i} = strcat(ct,nct);
+                end
                 yes = 1;
                 continue;
             end
-        end
-        if strcmp(ct,'5')
-            if pcb == cb && strcmp(pct,'2')
-                ct = 'sus2';
-                chordogram{2,i} = ct;
-                yes = 1;
-                continue;
-            end
-            if ncb == cb && strcmp(nct,'2')
-                ct = 'sus2';
-                chordogram{2,i} = ct;
-                yes = 1;
-                continue;
-            end
-        end
-        if strcmp(ct,'5') || strcmp(ct,'2')|| strcmp(ct,'n')
-            if pcb == cb && ~(strcmp(pct,'5') || strcmp(pct,'2')|| strcmp(pct,'n')||strcmp(pct,'maj/3')||strcmp(pct,'maj/5'))
-                ct = pct;
-                chordogram{2,i} = ct;
-                yes = 1;
-                continue;
-            end
-            if ncb == cb && ~(strcmp(nct,'5') || strcmp(nct,'2')|| strcmp(nct,'n')||strcmp(nct,'maj/3')||strcmp(nct,'maj/5'))
-                ct = nct;
-                chordogram{2,i} = ct;
-                yes = 1;
-                continue;
-            end
-        end
-        if strcmp(ct,'maj/3')
-            if mod(pcb-4-1,12)+1 == cb && ~strcmp(pct,'maj/3') && ~strcmp(pct,'maj/5')
-                chordogram{1,i-1} = cb;
-                chordogram{2,i-1} = 'maj/3';
-                chordogram{3,i-1} = num2bass(cb);
-                yes = 1;
-                continue;
-            end
-            if mod(ncb-4-1,12)+1 == cb && ~strcmp(nct,'maj/3') && ~strcmp(nct,'maj/5')
-                chordogram{1,i+1} = cb;
-                chordogram{2,i+1} = 'maj/3';
-                chordogram{3,i+1} = num2bass(cb);
-                yes = 1;
-                continue;
-            end
-        end
-        if strcmp(ct,'maj/5')
-            if mod(pcb-7-1,12)+1 == cb && ~strcmp(pct,'maj/3') && ~strcmp(pct,'maj/5')
-                chordogram{1,i-1} = cb;
-                chordogram{2,i-1} = 'maj/5';
-                chordogram{3,i-1} = num2bass(cb);
-                yes = 1;
-                continue;
-            end
-            if mod(ncb-7-1,12)+1 == cb && ~strcmp(nct,'maj/3') && ~strcmp(nct,'maj/5')
-                chordogram{1,i+1} = cb;
-                chordogram{2,i+1} = 'maj/5';
-                chordogram{3,i+1} = num2bass(cb);
-                yes = 1;
-                continue;
-            end
-        end
-        if strcmp(ct,'sus2') || strcmp(ct,'sus4')
-            chordogram{2,i} = 'maj';
-            yes = 1;
-            continue;
         end
     end
 end
@@ -691,7 +760,7 @@ for i = 1:1:lenOut
         bassnum = bass2num(bassname);
         treblename = chordname(2:end);
     end
-    % transform /3 and /5 back to original bassname and bassnum
+    % transform slash chord back to original bassname and bassnum
     if length(treblename) > 1
         if strcmp(treblename(end-1:end),'/3')
             bassnum = mod(bassnum+4-1,12) + 1;
@@ -699,6 +768,18 @@ for i = 1:1:lenOut
         end
         if strcmp(treblename(end-1:end),'/5')
             bassnum = mod(bassnum+7-1,12) + 1;
+            bassname = num2bass(bassnum);
+        end
+        if strcmp(treblename(end-1:end),'/7')
+            bassnum = mod(bassnum+10-1,12) + 1;
+            bassname = num2bass(bassnum);
+        end
+        if strcmp(treblename(end-1:end),'/7+')
+            bassnum = mod(bassnum+11-1,12) + 1;
+            bassname = num2bass(bassnum);
+        end
+        if strcmp(treblename(end-1:end),'/2')
+            bassnum = mod(bassnum+2-1,12) + 1;
             bassname = num2bass(bassnum);
         end
     end
@@ -745,6 +826,8 @@ xlabel('slice');
 ylabel('chord');
 title('chordprogression vs. slices');
 
+display('press enter to continue with feedback stage...');
+pause;
 % ********************************************************** %
 % ********************* Feedback Once - A******************* %
 % ********************************************************** %
@@ -788,7 +871,7 @@ title('newbasegram');
 set(gca, 'YTick',0:12, 'YTickLabel', bassnotenames);
 
 % ****** feedback back end ****** %
-nchordtype = 16;
+nchordtype = 28;
 chordtree = cell(2,nchordtype);
 chordtree{1,1} = [4,7];
 chordtree{2,1} = 'maj';
@@ -814,16 +897,40 @@ chordtree{1,11} = [5,7];
 chordtree{2,11} = 'sus4';
 chordtree{1,12} = [2,7];
 chordtree{2,12} = 'sus2';
-chordtree{1,13} = 3;
-chordtree{2,13} = 'min';
-chordtree{1,14} = 4;
-chordtree{2,14} = 'maj';
-chordtree{1,15} = 7;
-chordtree{2,15} = '5';
-chordtree{1,16} = 2;
-chordtree{2,16} = '2';
-% walk the tree using basegram and uppergram
-newchordogram = cell(3,lenOut);
+chordtree{1,13} = [2,5];
+chordtree{2,13} = 'min/7';
+chordtree{1,14} = [2,6];
+chordtree{2,14} = 'maj/7';
+chordtree{1,15} = [1,5];
+chordtree{2,15} = 'maj/7+';
+chordtree{1,16} = [2,10];
+chordtree{2,16} = 'maj/2';
+chordtree{1,17} = [4,9];
+chordtree{2,17} = 'maj6';
+chordtree{1,18} = [3,9];
+chordtree{2,18} = 'min6';
+chordtree{1,19} = 3;
+chordtree{2,19} = 'min';
+chordtree{1,20} = 4;
+chordtree{2,20} = 'maj';
+chordtree{1,21} = 7;
+chordtree{2,21} = '5';
+chordtree{1,22} = 2;
+chordtree{2,22} = '2';
+chordtree{1,23} = 5;
+chordtree{2,23} = '4';
+chordtree{1,24} = 6;
+chordtree{2,24} = '4#';
+chordtree{1,25} = 8;
+chordtree{2,25} = '6b';
+chordtree{1,26} = 9;
+chordtree{2,26} = '6';
+chordtree{1,27} = 10;
+chordtree{2,27} = '7b';
+chordtree{1,28} = 11;
+chordtree{2,28} = '7';
+
+newchordogram = cell(4,lenOut);
 for j = 1:1:lenOut
     bass = newbasegram(1,j);
     upper = newuppergram(:,j);
@@ -841,136 +948,166 @@ for j = 1:1:lenOut
         end
         if ismatchin == 1
             ismatchout = 1;
-            % convert maj/3 and maj/5 chord to correct bass
-            if i == 7
-                bass = mod(bass-4-1,12)+1;
+            % convert slash chords to correct treble name, keep bass num
+            upperbass = bass;
+            if i == 7 % maj/3
+                upperbass = mod(bass-4-1,12)+1;
             end
-            if i == 10
-                bass = mod(bass-7-1,12)+1;
+            if i == 10 % maj/5
+                upperbass = mod(bass-7-1,12)+1;
+            end
+            if i == 13 % min/7
+                upperbass = mod(bass-10-1,12)+1;
+            end
+            if i == 14 % maj/7
+                upperbass = mod(bass-10-1,12)+1;
+            end
+            if i == 15 % maj/7+
+                upperbass = mod(bass-11-1,12)+1;
+            end
+            if i == 16 % maj/2
+                upperbass = mod(bass-2-1,12)+1;
             end
             newchordogram{1,j} = bass;
             newchordogram{2,j} = chordtree{2,i};
-            newchordogram{3,j} = num2bass(bass);
+            newchordogram{3,j} = num2bass(upperbass);
+            newchordogram{4,j} = i;
             break;
         end
     end
     if ismatchout == 0
         newchordogram{1,j} = bass;
-        newchordogram{2,j} = 'n';
+        newchordogram{2,j} = '0';
         newchordogram{3,j} = num2bass(bass);
+        newchordogram{4,j} = 0;
     end
 end
 
-% gestalt newchordogram (merge chord types as human would do)
-% only keep maj, min, aug, dim, dom, minmaj, /3 and /5
-% if 2, 5, n type, merge to the nearest maj or min type with same bass
-%   if there is no nearest maj or min, merge n to 2 or 5, if both 2 and 5
-%   exist in the neigbourhood, merge them to be sus2
-% if /3 and /5, merge from nearest whatever type with same bass
-% if sus2, sus4, merge to maj with same bass
-newchordogram = [{0;'N';'N'} newchordogram {0;'N';'N'}];
+% gestaltize newchordogram ---
+% only keep triad, seventh and slash chords
+% if diad type, merge to the nearest triad or seventh type with same bass
+% if there is no nearest triad or seventh types, merge diads to try to form one
+newchordogram = [{0;'N';'N';0} newchordogram {0;'N';'N';0}];
 yes = 1;
 while yes
     yes = 0;
     for i = 2:1:length(newchordogram)-1
         cb = newchordogram{1,i};
         ct = newchordogram{2,i};
+        ctn = newchordogram{3,i};
+        cte = newchordogram{4,i};
         pcb = newchordogram{1,i-1};
         pct = newchordogram{2,i-1};
+        pctn = newchordogram{3,i-1};
+        pcte = newchordogram{4,i-1};
         ncb = newchordogram{1,i+1};
         nct = newchordogram{2,i+1};
-        if strcmp(ct,'n')
-            if pcb == cb && ~(strcmp(pct,'n'))&& ~(strcmp(pct,'maj/3'))&& ~(strcmp(pct,'maj/5'))
-                ct = pct;
-                newchordogram{2,i} = ct;
+        nctn = newchordogram{3,i+1};
+        ncte = newchordogram{4,i+1};
+        % merge diad with nearest triad or seventh with same bass
+        if (str2double(ct(1))) >= 0  % this indicates diad
+            if pcb == cb && ~(str2double(pct(1)) >=0)
+                newchordogram{2,i} = pct;
+                newchordogram{3,i} = pctn;
+                newchordogram{4,i} = pcte;
                 yes = 1;
                 continue;
             end
-            if ncb == cb && ~(strcmp(nct,'n'))&& ~(strcmp(nct,'maj/3'))&& ~(strcmp(nct,'maj/5'))
-                ct = nct;
-                newchordogram{2,i} = ct;
+            % if other diads are near by, try to merge them
+            if pcb == cb && (str2double(pct(1)) >=0)
+                tri = sort([pcte cte]);
+                ismatchout = 0;
+                for ci = 1:1:length(chordtree)
+                    ctri = chordtree{1,ci};
+                    if length(ctri) > 1
+                        if ctri(1) == tri(1) && ctri(2) == tri(2)
+                            % there's a triad match
+                            upperbass = bass;
+                            if ci == 7 % maj/3
+                                upperbass = mod(cb-4-1,12)+1;
+                            end
+                            if ci == 10 % maj/5
+                                upperbass = mod(cb-7-1,12)+1;
+                            end
+                            if ci == 13 % min/7
+                                upperbass = mod(cb-10-1,12)+1;
+                            end
+                            if ci == 14 % maj/7
+                                upperbass = mod(cb-10-1,12)+1;
+                            end
+                            if ci == 15 % maj/7+
+                                upperbass = mod(cb-11-1,12)+1;
+                            end
+                            if ci == 16 % maj/2
+                                upperbass = mod(cb-2-1,12)+1;
+                            end
+                            newchordogram{2,i} = chordtree{2,ci};
+                            newchordogram{3,i} = num2bass(upperbass);
+                            newchordogram{4,i} = ci;
+                            ismatchout = 1;
+                            break;
+                        end
+                    end
+                end
+                if ismatchout == 0
+                    % if there isn't a triad match, create a new label
+                    newchordogram{2,i} = strcat(ct,pct);
+                end
                 yes = 1;
                 continue;
             end
-        end
-        if strcmp(ct,'2')
-            if pcb == cb && strcmp(pct,'5')
-                ct = 'sus2';
-                newchordogram{2,i} = ct;
+            
+            if ncb == cb && ~(str2double(nct(1)) >=0)
+                newchordogram{2,i} = nct;
+                newchordogram{3,i} = nctn;
+                newchordogram{4,i} = ncte;
                 yes = 1;
                 continue;
             end
-            if ncb == cb && strcmp(nct,'5')
-                ct = 'sus2';
-                newchordogram{2,i} = ct;
+            
+            % if other diads are near by, try to merge them
+            if ncb == cb && (str2double(nct(1)) >=0)
+                tri = sort([ncte cte]);
+                ismatchout = 0;
+                for ci = 1:1:length(chordtree)
+                    ctri = chordtree{1,ci};
+                    if length(ctri) > 1
+                        if ctri(1) == tri(1) && ctri(2) == tri(2)
+                            % there's a triad match
+                            upperbass = bass;
+                            if ci == 7 % maj/3
+                                upperbass = mod(cb-4-1,12)+1;
+                            end
+                            if ci == 10 % maj/5
+                                upperbass = mod(cb-7-1,12)+1;
+                            end
+                            if ci == 13 % min/7
+                                upperbass = mod(cb-10-1,12)+1;
+                            end
+                            if ci == 14 % maj/7
+                                upperbass = mod(cb-10-1,12)+1;
+                            end
+                            if ci == 15 % maj/7+
+                                upperbass = mod(cb-11-1,12)+1;
+                            end
+                            if ci == 16 % maj/2
+                                upperbass = mod(cb-2-1,12)+1;
+                            end
+                            newchordogram{2,i} = chordtree{2,ci};
+                            newchordogram{3,i} = num2bass(upperbass);
+                            newchordogram{4,i} = ci;
+                            ismatchout = 1;
+                            break;
+                        end
+                    end
+                end
+                if ismatchout == 0
+                    % if there isn't a triad match, create a new label
+                    newchordogram{2,i} = strcat(ct,nct);
+                end
                 yes = 1;
                 continue;
             end
-        end
-        if strcmp(ct,'5')
-            if pcb == cb && strcmp(pct,'2')
-                ct = 'sus2';
-                newchordogram{2,i} = ct;
-                yes = 1;
-                continue;
-            end
-            if ncb == cb && strcmp(nct,'2')
-                ct = 'sus2';
-                newchordogram{2,i} = ct;
-                yes = 1;
-                continue;
-            end
-        end
-        if strcmp(ct,'5') || strcmp(ct,'2')|| strcmp(ct,'n')
-            if pcb == cb && ~(strcmp(pct,'5') || strcmp(pct,'2')|| strcmp(pct,'n')||strcmp(pct,'maj/3')||strcmp(pct,'maj/5'))
-                ct = pct;
-                newchordogram{2,i} = ct;
-                yes = 1;
-                continue;
-            end
-            if ncb == cb && ~(strcmp(nct,'5') || strcmp(nct,'2')|| strcmp(nct,'n')||strcmp(nct,'maj/3')||strcmp(nct,'maj/5'))
-                ct = nct;
-                newchordogram{2,i} = ct;
-                yes = 1;
-                continue;
-            end
-        end
-        if strcmp(ct,'maj/3')
-            if mod(pcb-4-1,12)+1 == cb && ~strcmp(pct,'maj/3') && ~strcmp(pct,'maj/5')
-                newchordogram{1,i-1} = cb;
-                newchordogram{2,i-1} = 'maj/3';
-                newchordogram{3,i-1} = num2bass(cb);
-                yes = 1;
-                continue;
-            end
-            if mod(ncb-4-1,12)+1 == cb && ~strcmp(nct,'maj/3') && ~strcmp(nct,'maj/5')
-                newchordogram{1,i+1} = cb;
-                newchordogram{2,i+1} = 'maj/3';
-                newchordogram{3,i+1} = num2bass(cb);
-                yes = 1;
-                continue;
-            end
-        end
-        if strcmp(ct,'maj/5')
-            if mod(pcb-7-1,12)+1 == cb && ~strcmp(pct,'maj/3') && ~strcmp(pct,'maj/5')
-                newchordogram{1,i-1} = cb;
-                newchordogram{2,i-1} = 'maj/5';
-                newchordogram{3,i-1} = num2bass(cb);
-                yes = 1;
-                continue;
-            end
-            if mod(ncb-7-1,12)+1 == cb && ~strcmp(nct,'maj/3') && ~strcmp(nct,'maj/5')
-                newchordogram{1,i+1} = cb;
-                newchordogram{2,i+1} = 'maj/5';
-                newchordogram{3,i+1} = num2bass(cb);
-                yes = 1;
-                continue;
-            end
-        end
-        if strcmp(ct,'sus2') || strcmp(ct,'sus4')
-            newchordogram{2,i} = 'maj';
-            yes = 1;
-            continue;
         end
     end
 end

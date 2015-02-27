@@ -325,3 +325,43 @@
 % title('note gestalt salience matrix - 2');
 % 
 % Sg = Sgpos; % gestalt salience matrix
+
+%         % merge slash chords from nearest chords with same bass
+%         if strcmp(ct,'maj/3')
+%             if mod(pcb-4-1,12)+1 == cb && ~strcmp(pct,'maj/3') && ~strcmp(pct,'maj/5')
+%                 chordogram{1,i-1} = cb;
+%                 chordogram{2,i-1} = 'maj/3';
+%                 chordogram{3,i-1} = num2bass(cb);
+%                 yes = 1;
+%                 continue;
+%             end
+%             if mod(ncb-4-1,12)+1 == cb && ~strcmp(nct,'maj/3') && ~strcmp(nct,'maj/5')
+%                 chordogram{1,i+1} = cb;
+%                 chordogram{2,i+1} = 'maj/3';
+%                 chordogram{3,i+1} = num2bass(cb);
+%                 yes = 1;
+%                 continue;
+%             end
+%         end
+%         if strcmp(ct,'maj/5')
+%             if mod(pcb-7-1,12)+1 == cb && ~strcmp(pct,'maj/3') && ~strcmp(pct,'maj/5')
+%                 chordogram{1,i-1} = cb;
+%                 chordogram{2,i-1} = 'maj/5';
+%                 chordogram{3,i-1} = num2bass(cb);
+%                 yes = 1;
+%                 continue;
+%             end
+%             if mod(ncb-7-1,12)+1 == cb && ~strcmp(nct,'maj/3') && ~strcmp(nct,'maj/5')
+%                 chordogram{1,i+1} = cb;
+%                 chordogram{2,i+1} = 'maj/5';
+%                 chordogram{3,i+1} = num2bass(cb);
+%                 yes = 1;
+%                 continue;
+%             end
+%         end
+%         % merge sus2 and sus4 into maj
+%         if strcmp(ct,'sus2') || strcmp(ct,'sus4')
+%             chordogram{2,i} = 'maj';
+%             yes = 1;
+%             continue;
+%         end
