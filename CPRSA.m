@@ -9,7 +9,7 @@ close all;
 clear;
 clc;
 root = '../AudioSamples/';
-audio = 'haoting-1.mp3';
+audio = 'Dont_Break_My_Heart-1.mp3';
 path = [root audio];
 
 % ********************************************************** %
@@ -588,6 +588,22 @@ while yes
         ncte = chordogram{4,i+1};
         % merge diad with nearest triad or seventh with same bass
         if (str2double(ct(1))) >= 0  % this indicates diad
+            if pcb == cb && strcmp(ct,'0')
+                chordogram{2,i} = pct;
+                chordogram{3,i} = pctn;
+                chordogram{4,i} = pcte;
+                yes = 1;
+                continue;
+            end
+            
+            if ncb == cb && strcmp(ct,'0')
+                chordogram{2,i} = nct;
+                chordogram{3,i} = nctn;
+                chordogram{4,i} = ncte;
+                yes = 1;
+                continue;
+            end
+            
             if pcb == cb && ~(str2double(pct(1)) >=0)
                 chordogram{2,i} = pct;
                 chordogram{3,i} = pctn;
@@ -595,8 +611,17 @@ while yes
                 yes = 1;
                 continue;
             end
+            
+            if ncb == cb && ~(str2double(nct(1)) >=0)
+                chordogram{2,i} = nct;
+                chordogram{3,i} = nctn;
+                chordogram{4,i} = ncte;
+                yes = 1;
+                continue;
+            end
+            
             % if other diads are near by, try to merge them
-            if pcb == cb && (str2double(pct(1)) >=0)
+            if pcb == cb && (str2double(pct(1)) >=0) && ~strcmp(pct,ct) && length(pct) <= 2 && length(ct) <= 2
                 tri = sort([pcte cte]);
                 ismatchout = 0;
                 for ci = 1:1:length(chordtree)
@@ -639,16 +664,8 @@ while yes
                 continue;
             end
             
-            if ncb == cb && ~(str2double(nct(1)) >=0)
-                chordogram{2,i} = nct;
-                chordogram{3,i} = nctn;
-                chordogram{4,i} = ncte;
-                yes = 1;
-                continue;
-            end
-            
             % if other diads are near by, try to merge them
-            if ncb == cb && (str2double(nct(1)) >=0)
+            if ncb == cb && (str2double(nct(1)) >=0)  && ~strcmp(nct,ct) && length(nct) <= 2 && length(ct) <= 2
                 tri = sort([ncte cte]);
                 ismatchout = 0;
                 for ci = 1:1:length(chordtree)
@@ -1006,6 +1023,22 @@ while yes
         ncte = newchordogram{4,i+1};
         % merge diad with nearest triad or seventh with same bass
         if (str2double(ct(1))) >= 0  % this indicates diad
+            if pcb == cb && strcmp(ct,'0')
+                newchordogram{2,i} = pct;
+                newchordogram{3,i} = pctn;
+                newchordogram{4,i} = pcte;
+                yes = 1;
+                continue;
+            end
+            
+            if ncb == cb && strcmp(ct,'0')
+                newchordogram{2,i} = nct;
+                newchordogram{3,i} = nctn;
+                newchordogram{4,i} = ncte;
+                yes = 1;
+                continue;
+            end
+            
             if pcb == cb && ~(str2double(pct(1)) >=0)
                 newchordogram{2,i} = pct;
                 newchordogram{3,i} = pctn;
@@ -1013,8 +1046,17 @@ while yes
                 yes = 1;
                 continue;
             end
+            
+            if ncb == cb && ~(str2double(nct(1)) >=0)
+                newchordogram{2,i} = nct;
+                newchordogram{3,i} = nctn;
+                newchordogram{4,i} = ncte;
+                yes = 1;
+                continue;
+            end
+            
             % if other diads are near by, try to merge them
-            if pcb == cb && (str2double(pct(1)) >=0)
+            if pcb == cb && (str2double(pct(1)) >=0) && ~strcmp(pct,ct) && length(pct) <= 2 && length(ct) <= 2
                 tri = sort([pcte cte]);
                 ismatchout = 0;
                 for ci = 1:1:length(chordtree)
@@ -1057,16 +1099,8 @@ while yes
                 continue;
             end
             
-            if ncb == cb && ~(str2double(nct(1)) >=0)
-                newchordogram{2,i} = nct;
-                newchordogram{3,i} = nctn;
-                newchordogram{4,i} = ncte;
-                yes = 1;
-                continue;
-            end
-            
             % if other diads are near by, try to merge them
-            if ncb == cb && (str2double(nct(1)) >=0)
+            if ncb == cb && (str2double(nct(1)) >=0)  && ~strcmp(nct,ct) && length(nct) <= 2 && length(ct) <= 2
                 tri = sort([ncte cte]);
                 ismatchout = 0;
                 for ci = 1:1:length(chordtree)
