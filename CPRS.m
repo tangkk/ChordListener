@@ -9,96 +9,355 @@ close all;
 clear;
 clc;
 root = '../AudioSamples/';
-audio = 'tuihou/tuihou-001.mp3';
+audio = 'tuihou/tuihou-013.mp3';
 path = [root audio];
 
 % ********************************************************** %
 % ********************* Front End ************************** %
 % ********************************************************** %
-
-% input stage
 display('frontend -- from input to harmonic salience matrix');
-[x, fs, songinfo, DSR] = myInput(path);
+[x,fs] = audioread(path);
+songinfo = audioinfo(path);
+DSR = fs / 11025;
+x = (x(:,1)+x(:,2))/2;
+x = resample(x, 1, DSR);
+fs = fs / DSR;
+songMax = max(abs(x));
+x = x / songMax;
+len = length(x);
 
-% transform time domain into frequency domain
+% implement a size 4096 hamming windowed, hop size 512 STFT spectrogram
+% with sample rate 11025, each hop's duration is 0.0464s = 46.4399ms
 wl = 4096;
+w = hamming(wl);
 hopsize = 512;
-X = mySpectrogram(x, wl, hopsize);
-tt = (1/fs)*(1:length(x));
-kk = (1:length(x));
-ff = fs/2*linspace(0,1,wl/2);
-myImagePlot(X, kk, ff, 'time slice', 'Hz', 'spectrogram');
+lenSlice = ceil((length(x)-wl)/hopsize);
+X = zeros(wl/2, lenSlice);
+idx = 1;
+for i = wl/2+1:hopsize:len - wl/2
+    raws = i-wl/2;
+    rawe = i+wl/2-1;
+    raw = x(raws:rawe).*w;
+    fftraw = fft(raw);
+    X(:,idx) = 2*abs(fftraw(1:wl/2));
+    X(:,idx) = X(:,idx) / max(X(:,idx));
+    idx = idx + 1;
+end
+f = fs/2*linspace(0,1,wl/2);
+kf = (1/fs)*(1:len);
+sfactor = 100;
+figure;
+image(kf,f,sfactor*X);
+set(gca,'YDir','normal');
+title('spectrogram');
 
+% build the tone profiles for calculating note salience matrix
+% each sinusoidal at frequency 'ftone' is generated via sin(2*pi*n*f/fs)
 fmin = 27.5; % MIDI note 21
 fmax = 1661; % MIDI note 92
 fratio = 2^(1/36);
 numtones = 72*3;
-[Ms,Mc] = toneProfileGen(wl, numtones, fmin, fmax, fratio, fs);
-myImagePlot(Ms, wl/2, numtones, 'time', '1/3 semitone', 'simple tone profile');
-myImagePlot(Mc, wl/2, numtones, 'time', '1/3 semitone', 'complex tone profile');
+Ms = zeros(numtones, wl/2); % simple tone profiles
+Mc = zeros(numtones, wl/2); % complex tone profiles
+% the true frequency of the tone is supposed to lie on bin notenum*3-1,
+% e.g. A4 is bin 49*3-1 = 146, C4 is bin 40*3-1 = 119 (note that notenum is
+% not midinum, note num is the index of the key on a piano with A0 = 1)
+staticbassbound = 30;
+statictreblebound = 60;
+bassboot = 1.5;
+trebleboot = 0.8;
+for toneidx = 1:1:numtones
+    ftone = fmin*(fratio^(toneidx-2));
+    stone = sin(2*pi*(1:wl)*ftone/fs).*w';
+    ctone = (0.9*sin(2*pi*(1:wl)*ftone/fs) + 0.9^2*sin(2*pi*(1:wl)*2*ftone/fs) + ...
+        0.9^3*sin(2*pi*(1:wl)*3*ftone/fs) + 0.9^4*sin(2*pi*(1:wl)*4*ftone/fs)).*w';
+    
+    ffttone = abs(fft(stone));
+    ffttone = ffttone(1:wl/2);
+    ffttone = ffttone / norm(ffttone,2);
+    
+    fftctone = abs(fft(ctone));
+    fftctone = fftctone(1:wl/2);
+    fftctone = fftctone / norm(fftctone,2);
+    % bass and treble boot
+    if toneidx < staticbassbound*3
+        ffttone = ffttone * bassboot;
+        fftctone = fftctone * bassboot;
+    end
+    if toneidx > statictreblebound*3
+        ffttone = ffttone * trebleboot;
+        fftctone = fftctone * trebleboot;
+    end
+    Ms(toneidx,:) = ffttone;
+    Mc(toneidx,:) = fftctone;
+end
 
 % calculate note salience matrix of the stft spectrogram (cosine
 % similarity) (note that this is an additive approach, as contrast to
 % the nnls approach which is an deductive approach)
 Ss = Ms*X;
 Sc = Mc*X;
-Spre = Sc.*Sc;
 sizeM = size(Ms);
 sizeX = size(X);
 ps = 1:sizeM(1);
-myImagePlot(Ss, kk, ps, 'time slice', '1/3 semitone', 'simple tone salience matrix');
-myImagePlot(Sc, kk, ps, 'time slice', '1/3 semitone', 'complex tone salience matrix');
-myImagePlot(Ss, kk, ps, 'time slice', '1/3 semitone', 'preliminary salience matrix');
+ks = 1:sizeX(2);
+sfactor = 100;
+figure;
+image(ks,ps,sfactor*Ss);
+set(gca,'YDir','normal');
+title('simple tone salience matrix');
+figure;
+image(ks,ps,sfactor*Sc);
+set(gca,'YDir','normal');
+title('complex tone salience matrix');
+
+Spre = Sc.*Sc;
+figure;
+image(ks,ps,sfactor*Spre);
+set(gca,'YDir','normal');
+title('preliminary salience matrix');
 
 % noise reduction process
-sizeNS = size(Spre);
+sizeNS = size(Sc);
 nt = 0.1;
-Ssn = noteSalienceNoiseReduce(Ss, nt);
-Scn = noteSalienceNoiseReduce(Sc, nt);
-myImagePlot(Ssn, kk, ps, 'time slice', '1/3 semitone', 'noised reduced simple tone salience matrix');
-myImagePlot(Scn, kk, ps, 'time slice', '1/3 semitone', 'noised reduced complex tone salience matrix');
+Ssn = zeros(sizeNS(1),sizeNS(2));
+Scn = zeros(sizeNS(1),sizeNS(2));
+for j = 1:1:sizeNS(2)
+    Ss(:,j) = Ss(:,j) / max(Ss(:,j));
+    Sc(:,j) = Sc(:,j) / max(Sc(:,j));
+    vs = Ss(:,j);
+    vc = Sc(:,j);
+    [pkss,locss] = findpeaks(vs,'MinPeakHeight',nt,'MinPeakProminence',nt);
+    [pksc,locsc] = findpeaks(vc,'MinPeakHeight',nt,'MinPeakProminence',nt);
+    vs = zeros(sizeNS(1),1);
+    vs(locss) = pkss;
+    Ssn(:,j) = vs;
+    vc = zeros(sizeNS(1),1);
+    vc(locsc) = pksc;
+    Scn(:,j) = vc;
+end
+sfactor = 100;
+figure;
+image(ks,ps,sfactor*Ssn);
+set(gca,'YDir','normal');
+title('noised reduced simple tone salience matrix');
+figure;
+image(ks,ps,sfactor*Scn);
+set(gca,'YDir','normal');
+title('noised reduced complex tone salience matrix');
 
-% computer note salience matrix by combining 1/3 semitones into semitones
-Spres = Ssn(1:3:end,:) + Ssn(2:3:end,:) + Ssn(3:3:end,:);
-Sprec = Scn(1:3:end,:) + Scn(2:3:end,:) + Scn(3:3:end,:);
+Spres = zeros(sizeNS(1)/3, sizeNS(2));
+Sprec = zeros(sizeNS(1)/3, sizeNS(2));
+for i = 1:3:sizeNS(1)
+    for j = 1:1:sizeNS(2)
+        Spres((i+2)/3,j) = (Ssn(i,j) + Ssn(i+1,j) + Ssn(i+2,j));
+        Sprec((i+2)/3,j) = (Scn(i,j) + Scn(i+1,j) + Scn(i+2,j));
+    end
+end
 S = Spres.*Sprec;
 sizeS = size(S);
-ntones = sizeS(1);
-nslices = sizeS(2);
-for j = 1:1:nslices
+for j = 1:1:sizeNS(2)
     if max(S(:,j)) > 0
         S(:,j) = S(:,j) / max(S(:,j)); 
     end
 end
-p = 1:ntones;
-myImagePlot(S, kk, p, 'time slice', 'semitone', 'note salience matrix');
+sfactor = 100;
+p = 1:sizeS(1);
+k = 1:sizeS(2);
+figure;
+image(k,p,sfactor*S);
+set(gca,'YDir','normal');
+title('note salience matrix');
 
-% gestaltize the note salience matrix
+% gestalize process
+% if within a gestalt window ahead there's a non-zero bin, compensate the
+% blank in between, the length of the gestalt window vary according to
+% the accumulated non-blank length, but with maximum value of 20 slices
 wgmax = 20;
 wpg = 0;
+Sg = zeros(sizeS(1), sizeS(2));
+for i = 1:1:sizeS(1)
+    trackidx = 1;
+    isblank = 0;
+    for j = 1:1:sizeS(2)
+        if S(i,j) > 0
+            % compensate the gestalt
+            if isblank == 1
+                lenBlank = j - trackidx;
+                if lenBlank <= min(wgmax, wpg)
+                    Sg(i,trackidx:j-1) = mean(S(i,max(trackidx-wpg,1):trackidx))*ones(1,lenBlank);
+                    wpg = wpg + lenBlank;
+                else
+                    wpg = 0;
+                end
+            end
+            Sg(i,j) = S(i,j);
+            isblank = 0;
+            wpg = wpg + 1;
+            trackidx = j;
+        else
+            isblank = 1;
+        end
+    end
+end
+figure;
+image(k,p,sfactor*Sg);
+set(gca,'YDir','normal');
+title('note gestalt salience matrix - 1');
+% input from above, if a piece of salience is shorter than a gestalt window, ignore it
 wng = 10;
-Sg = gestaltNoteSalience(S,wgmax, wpg, wng);
-myImagePlot(Sg, kk, p, 'time slice', 'semitone', 'gestalt note salience matrix');
+for i = 1:1:sizeS(1)
+    trackidx = 1;
+    islight = 0;
+    for j = 1:1:sizeS(2)
+        if Sg(i,j) == 0
+            if islight == 1;
+                lenLight = j - trackidx;
+                if lenLight <= wng
+                    Sg(i,trackidx:j-1) = zeros(1,lenLight);
+                end
+            end
+            trackidx = j;
+            islight = 0;
+        else
+            islight = 1;
+        end
+    end
+end
+figure;
+image(k,p,sfactor*Sg);
+set(gca,'YDir','normal');
+title('note gestalt salience matrix - 2');
 
 % onset filter (roughly detect the note onsets)
+So = zeros(sizeS(1), sizeS(2)); % onset matrix
 ot = 0.0;
 wo = 10;
-So = noteOnsetFilter(Sg, ot, wo);
-myImagePlot(So, kk, p, 'time slice', 'semitone', 'note onset matrix');
+for i = 1:1:sizeS(1)
+    for j = 1:1:sizeS(2)
+        hi = 0;
+        if j == 1
+            hi = max(Sg(i,j:min(j+10,sizeS(2))));
+        else
+            if Sg(i,j) > 0 && Sg(i,j-1) == 0
+                hi = max(Sg(i,j:min(j+wo,sizeS(2))));
+            end
+        end
+        if hi > ot
+            So(i,j:min(j+wo,sizeS(2))) = hi;
+        end
+    end
+end
+figure;
+image(k,p,sfactor*So);
+set(gca,'YDir','normal');
+title('onset matrix');
 
 % bassline filter (roughly set the dynamic bass bounds)
+Sb = zeros(1, sizeS(2)); % bassline vector
 bt = 0.0;
 wb = 10;
 cb = 1;
-Sb = bassLineFilter(Sg, bt, wb, cb);
-myLinePlot(1:length(Sb), Sb, 'time slice', 'semitone', nslices, ntones, '*', 'rough bassline');
+for j = 1:1:sizeS(2)
+    for i = 1:1:sizeS(1)
+        if Sg(i,j) > bt
+            Sb(j) = i;
+            break;
+        end
+        if i == sizeS(1) % continue the bound if nothing found
+            if j > 1
+                Sb(j) = Sb(j-1);
+            end
+        end
+    end
+    if j > 1
+        if Sb(j) == Sb(j-1)
+            cb = cb+1;
+        else
+            if cb < wb % if so, gestalize the outliers
+                Sb(j - cb:j-1) = Sb(max(j-cb-1,1));
+            end
+            cb = 1;
+        end
+    end
+end
+figure;
+plot(1:length(Sb),Sb,'*');
+ylim([1 sizeS(1)]);
+xlim([1 sizeS(2)]);
+title('rough bassline');
 
-% harmonic change filter (detect harmonic change boundaries)ht = 0.1;
+% harmonic change filter (detect harmonic change boundaries)
+Sh = zeros(sizeS(1),sizeS(2)); % harmonic bounded salience matrix (one slice per col)
+Shv = zeros(sizeS(1),sizeS(2)); % harmonic change matrix (one chord per col)
+Shc = zeros(1,sizeS(2)); % harmonic change moments
 ht = 0.1;
-[Sh, Shv, Shc, nchords] = harmonicChangeFilter(Sg, Sb, So, ht);
-myImagePlot(Sh, kk, p, 'time slice', 'semitone', 'harmonic bounded salience matrix');
-myImagePlot(Shv, kk(1:nchords), p, 'chord progression order', 'semitone', 'harmonic change matrix');
-myLinePlot(1:length(Shc), Shc, 'chord progression order', 'time slice', nchords, nslices, 'o', 'haromonic change moments');
+whs = 0;
+whe = 0;
+shidx = 1;
+firsttime = 1;
+oldonset = 1;
+newonset = 1;
+for j = 1:1:sizeS(2)
+    for i = 1:1:min(Sb(j)+6,sizeS(1)) % search upper bounded by Sb + 6
+        if (So(i,j) > ht && (j - whs > 0 || firsttime == 1)) || j == sizeS(2)
+            newonset = i;
+            if newonset == oldonset && j < sizeS(2)
+                break;
+            end
+            if firsttime == 1
+                firsttime = 0;
+                whs = j;
+                oldonset = newonset;
+                break;
+            end
+            % take the mean over the harmonic window in terms of row
+            if j == sizeS(2)
+                whe = j;
+                wh = whs:whe;
+            else
+                whe = j-1;
+                wh = whs:whe;
+            end
+            for ii = oldonset:1:sizeS(1) % count from oldonset (elsewise bass inference)
+                gesiiwh = mean(Sg(ii,wh));
+                Sh(ii,wh) = ones(1,length(wh))*gesiiwh;
+            end
+            % normalize the content within harmonic window in terms of col
+            for jj = whs:1:whe
+                tmp = Sh(:,jj);
+                if max(tmp) ~= 0
+                    tmp = tmp / max(tmp);
+                end
+                tmp(tmp < 0.1) = 0;
+                Sh(:,jj) = tmp;
+            end
+            % fill the harmonic change vector
+            Shv(:,shidx) = Sh(:,whs);
+            Shc(shidx) = whs;
+            shidx = shidx + 1;
+            whs = j;
+            oldonset = newonset;
+            break;
+        end
+    end
+end
+nchords = shidx - 1;
+Shc(shidx) = sizeS(2);
+Shv = Shv(:,(1:nchords));
+Shc = Shc(:,(1:nchords+1)); % boundaries include the endtime
+figure;
+image(k,p,sfactor*Sh);
+set(gca,'YDir','normal');
+title('harmonic bounded salience matrix');
+figure;
+image(k(1:nchords),p,sfactor*Shv);
+set(gca,'YDir','normal');
+title('harmonic change matrix');
+figure;
+plot(1:length(Shc),Shc,'o');
+title('haromonic change moments');
+
 
 % ********************************************************** %
 % ********************* Mid End - A************************* %
@@ -106,10 +365,11 @@ myLinePlot(1:length(Shc), Shc, 'chord progression order', 'time slice', nchords,
 display('midend-A -- uppergram and basegram');
 
 % compute basegram and uppergram (based on harmonic change matrix)
-basegram = zeros(2,nchords);
-uppergram = zeros(12,nchords);
-for j = 1:1:nchords
-    for i = 1:1:ntones
+sizeShv = size(Shv);
+basegram = zeros(2,sizeShv(2));
+uppergram = zeros(12,sizeShv(2));
+for j = 1:1:sizeShv(2)
+    for i = 1:1:sizeShv(1)
         % find out the lowest salience
         if Shv(i,j) > 0
             basegram(1,j) = mod((i+9)-1,12) + 1; % turn into a normal format
@@ -120,12 +380,12 @@ for j = 1:1:nchords
     end
 end
 for i = 1:1:12
-    for kk = 1:1:ntones/12
+    for kk = 1:1:sizeShv(1)/12
         uppergram(i,:) = uppergram(i,:) + Shv(i + 12*(kk-1),:);
     end
 end
 % normalize uppergram
-for j = 1:1:nchords
+for j = 1:1:sizeShv(2)
     if max(uppergram(:,j)) ~= 0
         uppergram(:,j) = uppergram(:,j) / max(uppergram(:,j));
         tmp = uppergram(:,j);
@@ -134,7 +394,7 @@ for j = 1:1:nchords
 end
 
 treblenotenames = {'C','C#','D','D#','E','F','F#','G','G#','A','A#','B'};
-ph = 1:nchords;
+ph = 1:sizeShv(2);
 kh = 1:12;
 sfactor = 100;
 figure;
@@ -279,8 +539,8 @@ chordtree{2,28} = '7';
 % walk the tree using basegram and uppergram
 % chordogram: 1st row: bass num; 2st row: treble type;
 % 3st row: treble root; 4th row: chord entry index
-chordogram = cell(4,nchords);
-for j = 1:1:nchords
+chordogram = cell(4,sizeShv(2));
+for j = 1:1:sizeShv(2)
     bass = basegram(1,j);
     upper = uppergram(:,j);
     ismatchout = 0;
@@ -515,7 +775,7 @@ end
 fw = fopen([filename '.ct.txt'],'w');
 formatSpec1 = '%s';
 formatSpec2 = '%s\n';
-T = nslices; % the total number of time slices contained in the evidence
+T = sizeS(2); % the total number of time slices contained in the evidence
 t = ((hopsize/fs)*(1:T));
 lenoutchordogram = length(outchordogram);
 outidx = 1;
@@ -1003,7 +1263,7 @@ end
 fw = fopen([filename '.ct.txt'],'w');
 formatSpec1 = '%s';
 formatSpec2 = '%s\n';
-T = nslices; % the total number of time slices contained in the evidence
+T = sizeS(2); % the total number of time slices contained in the evidence
 t = ((hopsize/fs)*(1:T));
 lenoutchordogram = length(outchordogram);
 for i = 1:1:lenoutchordogram
