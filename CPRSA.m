@@ -9,7 +9,7 @@ close all;
 clear;
 clc;
 root = '../AudioSamples/';
-audio = 'heidongli-1.mp3';
+audio = 'tuihou/tuihou-013.mp3';
 path = [root audio];
 
 % ********************************************************** %
@@ -415,13 +415,13 @@ set(gca, 'YTick',0:12, 'YTickLabel', bassnotenames);
 % try chord recognition tree method (or chord dictionary method)
 % the chord tree is built this way with priority from top to down
 % --music--            --digital--     --digital difference--
-% 1->3->7 maj7         1,5,12           4,11
-% 1->3b->7b min7       1,4,11           3,10
-% 1->3b->7 minmaj7     1,4,12           3,11
 % 1->3->5 maj          1,5,8            4,7
 % 1->3b->5 min         1,4,8            3,7
 % 1->3->5# aug         1,5,9            4,8
 % 1->3b->5b dim        1,4,7            3,6
+% 1->3->7 maj7         1,5,12           4,11
+% 1->3b->7b min7       1,4,11           3,10
+% 1->3b->7 minmaj7     1,4,12           3,11
 % 1->3->7b dom7        1,5,11           4,10
 % 1->3->6 maj6         1,5,10           4,9
 % 1->3b->6 min6        1,4,10           3,9
@@ -451,35 +451,36 @@ set(gca, 'YTick',0:12, 'YTickLabel', bassnotenames);
 display('backend-A -- chordtree');
 nchordtype = 28;
 chordtree = cell(2,nchordtype);
-chordtree{1,1} = [4,11];
-chordtree{2,1} = 'maj7';
 
-chordtree{1,2} = [3,10];
-chordtree{2,2} = 'min7';
+chordtree{1,1} = [3,7];
+chordtree{2,1} = 'min';
 
-chordtree{1,3} = [3,11];
-chordtree{2,3} = 'minmaj7';
+chordtree{1,2} = [4,7];
+chordtree{2,2} = 'maj';
 
-chordtree{1,4} = [4,7];
-chordtree{2,4} = 'maj';
+chordtree{1,3} = [4,8];
+chordtree{2,3} = 'aug';
 
-chordtree{1,5} = [3,7];
-chordtree{2,5} = 'min';
+chordtree{1,4} = [3,6];
+chordtree{2,4} = 'dim';
 
-chordtree{1,6} = [4,8];
-chordtree{2,6} = 'aug';
+chordtree{1,5} = [3,10];
+chordtree{2,5} = 'min7';
 
-chordtree{1,7} = [3,6];
-chordtree{2,7} = 'dim';
+chordtree{1,6} = [4,11];
+chordtree{2,6} = 'maj7';
+
+chordtree{1,7} = [3,11];
+chordtree{2,7} = 'minmaj7';
 
 chordtree{1,8} = [4,10];
 chordtree{2,8} = 'dom7';
 
-chordtree{1,9} = [4,9];
-chordtree{2,9} = 'maj6';
+chordtree{1,9} = [3,9];
+chordtree{2,9} = 'min6';
 
-chordtree{1,10} = [3,9];
-chordtree{2,10} = 'min6';
+chordtree{1,10} = [4,9];
+chordtree{2,10} = 'maj6';
 
 chordtree{1,11} = [5,7];
 chordtree{2,11} = 'sus4';
@@ -764,7 +765,14 @@ chordboundaries = chordboundaries(1:outidx);
 maxOutNum = 200;
 outputstrings = cell(1,maxOutNum);
 
-fw = fopen([audio(1:end-4) '.ct.txt'],'w');
+audiopath = audio(1:end-4);
+if ~isempty(strfind(audio,'/'))
+    tmp = strsplit(audiopath,'/');
+    filename = tmp{2};
+else
+    filename = audiopath;
+end
+fw = fopen([filename '.ct.txt'],'w');
 formatSpec1 = '%s';
 formatSpec2 = '%s\n';
 T = sizeS(2); % the total number of time slices contained in the evidence
@@ -921,35 +929,36 @@ set(gca, 'YTick',0:12, 'YTickLabel', bassnotenames);
 % ****** feedback back end ****** %
 nchordtype = 28;
 chordtree = cell(2,nchordtype);
-chordtree{1,1} = [4,11];
-chordtree{2,1} = 'maj7';
 
-chordtree{1,2} = [3,10];
-chordtree{2,2} = 'min7';
+chordtree{1,1} = [3,7];
+chordtree{2,1} = 'min';
 
-chordtree{1,3} = [3,11];
-chordtree{2,3} = 'minmaj7';
+chordtree{1,2} = [4,7];
+chordtree{2,2} = 'maj';
 
-chordtree{1,4} = [4,7];
-chordtree{2,4} = 'maj';
+chordtree{1,3} = [4,8];
+chordtree{2,3} = 'aug';
 
-chordtree{1,5} = [3,7];
-chordtree{2,5} = 'min';
+chordtree{1,4} = [3,6];
+chordtree{2,4} = 'dim';
 
-chordtree{1,6} = [4,8];
-chordtree{2,6} = 'aug';
+chordtree{1,5} = [3,10];
+chordtree{2,5} = 'min7';
 
-chordtree{1,7} = [3,6];
-chordtree{2,7} = 'dim';
+chordtree{1,6} = [4,11];
+chordtree{2,6} = 'maj7';
+
+chordtree{1,7} = [3,11];
+chordtree{2,7} = 'minmaj7';
 
 chordtree{1,8} = [4,10];
 chordtree{2,8} = 'dom7';
 
-chordtree{1,9} = [4,9];
-chordtree{2,9} = 'maj6';
+chordtree{1,9} = [3,9];
+chordtree{2,9} = 'min6';
 
-chordtree{1,10} = [3,9];
-chordtree{2,10} = 'min6';
+chordtree{1,10} = [4,9];
+chordtree{2,10} = 'maj6';
 
 chordtree{1,11} = [5,7];
 chordtree{2,11} = 'sus4';
@@ -1244,7 +1253,14 @@ xlabel('time');
 ylabel('chord');
 title('updated chordprogression vs. slice');
 
-fw = fopen([audio(1:end-4) '.ct.txt'],'w');
+audiopath = audio(1:end-4);
+if ~isempty(strfind(audio,'/'))
+    tmp = strsplit(audiopath,'/');
+    filename = tmp{2};
+else
+    filename = audiopath;
+end
+fw = fopen([filename '.ct.txt'],'w');
 formatSpec1 = '%s';
 formatSpec2 = '%s\n';
 T = sizeS(2); % the total number of time slices contained in the evidence
@@ -1267,4 +1283,4 @@ end
 fclose(fw);
 
 % ********************* End of System A ******************** %
-display('end of system A...');
+display(strcat('end of system A recognizing...',filename));
