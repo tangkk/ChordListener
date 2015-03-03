@@ -1,12 +1,12 @@
 function writeChordProgression(audiopath, nslices, hopsize, fs, outchordogram, outboundaries)
 
-if ~isempty(strfind(audiopath,'/'))
-    tmp = strsplit(audiopath,'/');
-    filename = tmp{2};
-else
-    filename = audiopath;
-end
-fw = fopen([filename '.ct.txt'],'w');
+% if ~isempty(strfind(audiopath,'/'))
+%     tmp = strsplit(audiopath,'/');
+%     filename = tmp{2};
+% else
+%     filename = audiopath;
+% end
+fw = fopen([audiopath '.ct.txt'],'w');
 formatSpec1 = '%s';
 formatSpec2 = '%s\n';
 T = nslices; % the total number of time slices contained in the evidence
