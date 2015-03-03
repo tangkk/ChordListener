@@ -15,28 +15,9 @@ for i = 1:1:lenOut
         treblename = chordname(2:end);
     end
     % transform slash chord back to original bassname and bassnum
-    if length(treblename) > 1
-        if strcmp(treblename(end-1:end),'/3')
-            bassnum = mod(bassnum+4-1,12) + 1;
-            bassname = num2bass(bassnum);
-        end
-        if strcmp(treblename(end-1:end),'/5')
-            bassnum = mod(bassnum+7-1,12) + 1;
-            bassname = num2bass(bassnum);
-        end
-        if strcmp(treblename(end-1:end),'/7')
-            bassnum = mod(bassnum+10-1,12) + 1;
-            bassname = num2bass(bassnum);
-        end
-        if strcmp(treblename(end-1:end),'/7+')
-            bassnum = mod(bassnum+11-1,12) + 1;
-            bassname = num2bass(bassnum);
-        end
-        if strcmp(treblename(end-1:end),'/2')
-            bassnum = mod(bassnum+2-1,12) + 1;
-            bassname = num2bass(bassnum);
-        end
-    end
+    bassnum = upperbass2bass(bassnum, treblename);
+    bassname = num2bass(bassnum);
+    
     chordprogression{1,i} = chordname;
     chordprogression{2,i} = bassname;
     chordprogression{3,i} = treblename;

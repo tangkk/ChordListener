@@ -30,25 +30,8 @@ for j = 1:1:nchords
         if ismatchin == 1
             ismatchout = 1;
             % convert slash chords to correct treble name, keep bass num
-            upperbass = bass;
-            if i == 13 % maj/3
-                upperbass = mod(bass-4-1,12)+1;
-            end
-            if i == 14 % maj/5
-                upperbass = mod(bass-7-1,12)+1;
-            end
-            if i == 15 % min/7
-                upperbass = mod(bass-10-1,12)+1;
-            end
-            if i == 16 % maj/7
-                upperbass = mod(bass-10-1,12)+1;
-            end
-            if i == 17 % maj/7+
-                upperbass = mod(bass-11-1,12)+1;
-            end
-            if i == 18 % maj/2
-                upperbass = mod(bass-2-1,12)+1;
-            end
+            treble = chordtree{2,i};
+            upperbass = bass2upperbass(bass, treble);
             chordogram{1,j} = bass;
             chordogram{2,j} = chordtree{2,i};
             chordogram{3,j} = num2bass(upperbass);

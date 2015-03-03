@@ -1,7 +1,6 @@
-function [x, fs, songinfo, DSR] = myInput(path)
+function [x, fs] = myInput(path)
 
 [x,fs] = audioread(path);
-songinfo = audioinfo(path);
 DSR = fs / 11025;
 x = (x(:,1)+x(:,2))/2;
 x = resample(x, 1, DSR);

@@ -12,9 +12,9 @@ clc;
 display('input stage -- read audio from path');
 % input stage
 root = '../AudioSamples/';
-audio = 'tuihou/tuihou-002.mp3';
+audio = 'tuihou/tuihou-001.mp3';
 path = [root audio];
-[x, fs, songinfo, DSR] = myInput(path);
+[x, fs] = myInput(path);
 
 % ********************************************************** %
 % ********************* Front End ************************** %
@@ -25,7 +25,7 @@ display('frontend -- from input to harmonic salience matrix');
 wl = 4096;
 hopsize = 512;
 X = mySpectrogram(x, wl, hopsize);
-tt = (1/fs)*(1:length(x));
+tk = (1/fs)*(1:length(x));
 kk = (1:length(x));
 ff = fs/2*linspace(0,1,wl/2);
 myImagePlot(X, kk, ff, 'slice', 'Hz', 'spectrogram');
@@ -66,11 +66,7 @@ S = Spres.*Sprec;
 sizeS = size(S);
 ntones = sizeS(1);
 nslices = sizeS(2);
-for j = 1:1:nslices
-    if max(S(:,j)) > 0
-        S(:,j) = S(:,j) / max(S(:,j)); 
-    end
-end
+S = normalizeGram(S);
 p = 1:ntones;
 myImagePlot(S, kk, p, 'slice', 'semitone', 'note salience matrix');
 
@@ -109,19 +105,20 @@ display('midend-A -- uppergram and basegram');
 % compute basegram and uppergram (based on harmonic change matrix)
 basegram = computeBasegram(Shv);
 uppergram = computeUppergram(Shv);
-
-treblenotenames = {'C','C#','D','D#','E','F','F#','G','G#','A','A#','B'};
 bassnotenames = {'N','C','C#','D','D#','E','F','F#','G','G#','A','A#','B'};
+treblenotenames = {'C','C#','D','D#','E','F','F#','G','G#','A','A#','B'};
 kh = 1:nchords;
 ph = 1:12;
-myImagePlot(uppergram, kh, ph, 'chord progression order', 'semitone', 'uppergram', ph,treblenotenames);
 myLinePlot(kh, basegram(1,:), 'chord progression order', 'semitone', nchords, 12, 'o', 'basegram', 0:12, bassnotenames);
+myImagePlot(uppergram, kh, ph, 'chord progression order', 'semitone', 'uppergram', ph,treblenotenames);
 
 % ********************************************************** %
 % ********************* Back End - A************************ %
 % ********************************************************** %
 display('backend-A -- chordtree');
+
 chordtree = buildChordTree;
+
 chordogram = computeChordogram(basegram, uppergram, chordtree);
 
 chordogram = gestaltizeChordogram(chordogram, chordtree);
@@ -137,17 +134,16 @@ chordprogression = fullInfoChordProgression(outchordogram);
 % ********************************************************** %
 % ********************* Feedback Once - A******************* %
 % ********************************************************** %
-display('press enter to continue with feedback stage...');
-pause;
 
 % ****** feedback mid end ****** %
 display('feedback-A -- use chord boundaries information to do it again');
+
 ut = 1;
 [newbasegram, newuppergram] = updateBaseUpperGram(chordprogression, outboundaries, S, ut);
 kh = 1:length(newbasegram);
 ph = 1:12;
-myImagePlot(newuppergram, kh, ph, 'chord progression order', 'semitone', 'uppergram', ph,treblenotenames);
 myLinePlot(kh, newbasegram(1,:), 'chord progression order', 'semitone', nchords, 12, 'o', 'basegram', 0:12, bassnotenames);
+myImagePlot(newuppergram, kh, ph, 'chord progression order', 'semitone', 'uppergram', ph,treblenotenames);
 
 % ****** feedback back end ****** %
 newchordogram = computeChordogram(newbasegram, newuppergram, chordtree);

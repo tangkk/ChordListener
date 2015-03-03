@@ -9,8 +9,7 @@ function writeChordProgression(audiopath, nslices, hopsize, fs, outchordogram, o
 fw = fopen([audiopath '.ct.txt'],'w');
 formatSpec1 = '%s';
 formatSpec2 = '%s\n';
-T = nslices; % the total number of time slices contained in the evidence
-tw = ((hopsize/fs)*(1:T));
+tw = ((hopsize/fs)*(1:nslices));
 lenoutchordogram = length(outchordogram);
 for i = 1:1:lenoutchordogram
     if i == 1

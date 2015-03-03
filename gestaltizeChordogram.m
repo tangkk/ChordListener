@@ -64,27 +64,10 @@ while yes
                     if length(ctri) > 1
                         if ctri(1) == tri(1) && ctri(2) == tri(2)
                             % there's a triad match
-                            upperbass = bass;
-                            if ci == 7 % maj/3
-                                upperbass = mod(cb-4-1,12)+1;
-                            end
-                            if ci == 10 % maj/5
-                                upperbass = mod(cb-7-1,12)+1;
-                            end
-                            if ci == 13 % min/7
-                                upperbass = mod(cb-10-1,12)+1;
-                            end
-                            if ci == 14 % maj/7
-                                upperbass = mod(cb-10-1,12)+1;
-                            end
-                            if ci == 15 % maj/7+
-                                upperbass = mod(cb-11-1,12)+1;
-                            end
-                            if ci == 16 % maj/2
-                                upperbass = mod(cb-2-1,12)+1;
-                            end
+                            treble = chordtree{2,ci};
+                            ucb = bass2upperbass(cb, treble);
                             chordogramin{2,i} = chordtree{2,ci};
-                            chordogramin{3,i} = num2bass(upperbass);
+                            chordogramin{3,i} = num2bass(ucb);
                             chordogramin{4,i} = ci;
                             ismatchout = 1;
                             break;
@@ -108,27 +91,10 @@ while yes
                     if length(ctri) > 1
                         if ctri(1) == tri(1) && ctri(2) == tri(2)
                             % there's a triad match
-                            upperbass = bass;
-                            if ci == 7 % maj/3
-                                upperbass = mod(cb-4-1,12)+1;
-                            end
-                            if ci == 10 % maj/5
-                                upperbass = mod(cb-7-1,12)+1;
-                            end
-                            if ci == 13 % min/7
-                                upperbass = mod(cb-10-1,12)+1;
-                            end
-                            if ci == 14 % maj/7
-                                upperbass = mod(cb-10-1,12)+1;
-                            end
-                            if ci == 15 % maj/7+
-                                upperbass = mod(cb-11-1,12)+1;
-                            end
-                            if ci == 16 % maj/2
-                                upperbass = mod(cb-2-1,12)+1;
-                            end
+                            treble = chordtree{2,ci};
+                            ucb = bass2upperbass(cb, treble);
                             chordogramin{2,i} = chordtree{2,ci};
-                            chordogramin{3,i} = num2bass(upperbass);
+                            chordogramin{3,i} = num2bass(ucb);
                             chordogramin{4,i} = ci;
                             ismatchout = 1;
                             break;

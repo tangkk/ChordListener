@@ -10,7 +10,7 @@ for j = 1:1:nchords
         % find out the lowest salience
         if Shv(i,j) > 0
             % revise the order to be starting from C
-            basegram(1,j) = mod((i+9)-1,12) + 1;
+            basegram(1,j) = pitchTranspose(i,9);
             basegram(2,j) = Shv(i,j);
             break;
         end
