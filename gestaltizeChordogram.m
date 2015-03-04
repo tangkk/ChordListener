@@ -57,54 +57,26 @@ while yes
             
             % if other diads are near by, try to merge them
             if pcb == cb && (str2double(pct(1)) >=0) && ~strcmp(pct,ct) && length(pct) <= 2 && length(ct) <= 2
+                bass = cb;
                 tri = sort([pcte cte]);
-                ismatchout = 0;
-                for ci = 1:1:length(chordtree)
-                    ctri = chordtree{1,ci};
-                    if length(ctri) > 1
-                        if ctri(1) == tri(1) && ctri(2) == tri(2)
-                            % there's a triad match
-                            treble = chordtree{2,ci};
-                            ucb = bass2upperbass(cb, treble);
-                            chordogramin{2,i} = chordtree{2,ci};
-                            chordogramin{3,i} = num2bass(ucb);
-                            chordogramin{4,i} = ci;
-                            ismatchout = 1;
-                            break;
-                        end
-                    end
-                end
-                if ismatchout == 0
-                    % if there isn't a triad match, create a new label
-                    chordogramin{2,i} = strcat(ct,pct);
-                end
+                [treble, ctidx] = chordTreeEntryMatching(tri, chordtree);
+                upperbass = bass2upperbass(bass, treble);
+                chordogramin{2,i} = treble;
+                chordogramin{3,i} = num2bass(upperbass);
+                chordogramin{4,i} = ctidx;
                 yes = 1;
                 continue;
             end
             
             % if other diads are near by, try to merge them
             if ncb == cb && (str2double(nct(1)) >=0)  && ~strcmp(nct,ct) && length(nct) <= 2 && length(ct) <= 2
+                bass = cb;
                 tri = sort([ncte cte]);
-                ismatchout = 0;
-                for ci = 1:1:length(chordtree)
-                    ctri = chordtree{1,ci};
-                    if length(ctri) > 1
-                        if ctri(1) == tri(1) && ctri(2) == tri(2)
-                            % there's a triad match
-                            treble = chordtree{2,ci};
-                            ucb = bass2upperbass(cb, treble);
-                            chordogramin{2,i} = chordtree{2,ci};
-                            chordogramin{3,i} = num2bass(ucb);
-                            chordogramin{4,i} = ci;
-                            ismatchout = 1;
-                            break;
-                        end
-                    end
-                end
-                if ismatchout == 0
-                    % if there isn't a triad match, create a new label
-                    chordogramin{2,i} = strcat(ct,nct);
-                end
+                [treble, ctidx] = chordTreeEntryMatching(tri, chordtree);
+                upperbass = bass2upperbass(bass, treble);
+                chordogramin{2,i} = treble;
+                chordogramin{3,i} = num2bass(upperbass);
+                chordogramin{4,i} = ctidx;
                 yes = 1;
                 continue;
             end

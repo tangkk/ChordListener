@@ -1,5 +1,5 @@
 % the chord tree is built this way with priority from top to down
-% --music--            --digital--     --digital difference--
+% --chord--            --digital--     --digital difference--
 % 1->3->5 maj          1,5,8            4,7
 % 1->3b->5 min         1,4,8            3,7
 % 1->3->5# aug         1,5,9            4,8
