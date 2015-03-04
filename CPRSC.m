@@ -9,10 +9,12 @@ close all;
 clear;
 clc;
 
+feedbackpause = 0;
+
 display('input stage -- read audio from path');
 % input stage
 root = '../AudioSamples/';
-audio = 'tuihou/tuihou-001.mp3';
+audio = 'tuihou/tuihou-007.mp3';
 path = [root audio];
 [x, fs] = myInput(path);
 
@@ -121,7 +123,7 @@ chordmode = buildChordMode;
 
 chordogram = computeChordogram(basegram, uppergram, chordmode);
 
-chordogram = gestaltizeChordogram(chordogram, chordmode);
+% chordogram = gestaltizeChordogram(chordogram, chordmode);
 
 [outchordogram, outboundaries] = combineSameChords(chordogram, Shc);
 
@@ -134,7 +136,10 @@ chordprogression = fullInfoChordProgression(outchordogram);
 % ********************************************************** %
 % ********************* Feedback Once - A******************* %
 % ********************************************************** %
-pause;
+if feedbackpause
+    display('press enter to continue with the feedback stage...');
+    pause;
+end
 % ****** feedback mid end ****** %
 display('feedback-A -- use chord boundaries information to do it again');
 
@@ -148,7 +153,7 @@ myImagePlot(newuppergram, kh, ph, 'chord progression order', 'semitone', 'upperg
 % ****** feedback back end ****** %
 newchordogram = computeChordogram(newbasegram, newuppergram, chordmode);
 
-newchordogram = gestaltizeChordogram(newchordogram, chordmode);
+% newchordogram = gestaltizeChordogram(newchordogram, chordmode);
 
 [newoutchordogram, newoutboundaries] = combineSameChords(newchordogram, outboundaries);
 

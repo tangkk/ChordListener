@@ -1,5 +1,6 @@
 function [treble, ctidx] = trebleMatching(bass,upper,template, templatetype)
 
+% match by chord tree priority
 if strcmp(templatetype,'chordtree')
     chordtree = template;
     treble = '0';
@@ -23,5 +24,17 @@ if strcmp(templatetype,'chordtree')
     end
 end
 
+% match by final score in each chord modes, if ties, selects the one
+% with lower index
 if strcmp(templatetype, 'chordmode')
+    chordmode = template;
+    nchordtype = length(chordmode);
+    treblescore = zeros(1,nchordtype);
+    for i = 1:1:nchordtype
+        uppermode = zeros(12,1);
+        uppermode(pitchTranspose(bass, chordmode{1,i})) = chordmode{3,i};
+        treblescore(i) = upper'*uppermode;
+    end
+    [maxscore,ctidx] = max(treblescore);
+    treble = chordmode{2,ctidx};
 end
