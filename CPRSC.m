@@ -9,12 +9,12 @@ close all;
 clear;
 clc;
 
-feedbackpause = 0;
+feedbackpause = 1;
 
 display('input stage -- read audio from path');
 % input stage
 root = '../AudioSamples/';
-audio = 'tuihou/tuihou-007.mp3';
+audio = 'tuihou/tuihou.mp3';
 path = [root audio];
 [x, fs] = myInput(path);
 
@@ -90,14 +90,17 @@ bt = 0.0;
 wb = 10;
 cb = 1;
 Sb = bassLineFilter(Sg, bt, wb, cb);
-myLinePlot(1:length(Sb), Sb, 'slice', 'semitone', nslices, ntones, '*', 'rough bassline');
+myLinePlot(1:length(Sb), Sb, 'slice', 'semitone',...
+    nslices, ntones, '*', 'rough bassline');
 
 % harmonic change filter (detect harmonic change boundaries)ht = 0.1;
 ht = 0.1;
 [Sh, Shv, Shc, nchords] = harmonicChangeFilter(Sg, Sb, So, ht);
 myImagePlot(Sh, kk, p, 'slice', 'semitone', 'harmonic bounded salience matrix');
-myImagePlot(Shv, kk(1:nchords), p, 'chord progression order', 'semitone', 'harmonic change matrix');
-myLinePlot(1:length(Shc), Shc, 'chord progression order', 'slice', nchords, nslices, 'o', 'haromonic change moments');
+myImagePlot(Shv, kk(1:nchords), p, 'chord progression order',...
+    'semitone', 'harmonic change matrix');
+myLinePlot(1:length(Shc), Shc, 'chord progression order', 'slice',...
+    nchords, nslices, 'o', 'haromonic change moments');
 
 % ********************************************************** %
 % ********************* Mid End - A************************* %
@@ -111,8 +114,10 @@ bassnotenames = {'N','C','C#','D','D#','E','F','F#','G','G#','A','A#','B'};
 treblenotenames = {'C','C#','D','D#','E','F','F#','G','G#','A','A#','B'};
 kh = 1:nchords;
 ph = 1:12;
-myLinePlot(kh, basegram(1,:), 'chord progression order', 'semitone', nchords, 12, 'o', 'basegram', 0:12, bassnotenames);
-myImagePlot(uppergram, kh, ph, 'chord progression order', 'semitone', 'uppergram', ph,treblenotenames);
+myLinePlot(kh, basegram(1,:), 'chord progression order', 'semitone',...
+    nchords, 12, 'o', 'basegram', 0:12, bassnotenames);
+myImagePlot(uppergram, kh, ph, 'chord progression order', 'semitone',...
+    'uppergram', ph,treblenotenames);
 
 % ********************************************************** %
 % ********************* Back End - A************************ %
@@ -123,15 +128,18 @@ chordmode = buildChordMode;
 
 chordogram = computeChordogram(basegram, uppergram, chordmode);
 
-% chordogram = gestaltizeChordogram(chordogram, chordmode);
+[outchordogram, outbassgram, outboundaries] = combineSameChords(chordogram, Shc);
 
-[outchordogram, outboundaries] = combineSameChords(chordogram, Shc);
+[outchordogram, outboundaries, outbassgram] = mergeDifferentChords(outchordogram, outboundaries, outbassgram); 
+
+myLinePlot(1:length(outbassgram), outbassgram, 'chord progression order', 'semitone',...
+    length(outbassgram), 12, 'o', 'outbassgram', 0:12, bassnotenames);
+myLinePlot(1:length(outboundaries), outboundaries, 'chord progression order', 'slice',...
+    length(outboundaries), nslices, 'o', 'outboundaries');
 
 visualizeChordProgression(outchordogram, outboundaries);
 
 writeChordProgression(path, nslices, hopsize, fs, outchordogram, outboundaries);
-
-chordprogression = fullInfoChordProgression(outchordogram);
 
 % ********************************************************** %
 % ********************* Feedback Once - A******************* %
@@ -144,7 +152,7 @@ end
 display('feedback-A -- use chord boundaries information to do it again');
 
 ut = 1;
-[newbasegram, newuppergram] = updateBaseUpperGram(chordprogression, outboundaries, S, ut);
+[newbasegram, newuppergram] = updateBaseUpperGram(outbassgram, outboundaries, S, ut);
 kh = 1:length(newbasegram);
 ph = 1:12;
 myLinePlot(kh, newbasegram(1,:), 'chord progression order', 'semitone', nchords, 12, 'o', 'basegram', 0:12, bassnotenames);
@@ -153,9 +161,14 @@ myImagePlot(newuppergram, kh, ph, 'chord progression order', 'semitone', 'upperg
 % ****** feedback back end ****** %
 newchordogram = computeChordogram(newbasegram, newuppergram, chordmode);
 
-% newchordogram = gestaltizeChordogram(newchordogram, chordmode);
+[newoutchordogram, newoutbassgram, newoutboundaries] = combineSameChords(newchordogram, outboundaries);
 
-[newoutchordogram, newoutboundaries] = combineSameChords(newchordogram, outboundaries);
+[newoutchordogram, newoutbassgram, newoutboundaries] = mergeDifferentChords(newoutchordogram, newoutbassgram, newoutboundaries);
+
+myLinePlot(1:length(newoutbassgram), newoutbassgram, 'chord progression order', 'semitone',...
+    length(newoutbassgram), 12, 'o', 'newoutbassgram', 0:12, bassnotenames);
+myLinePlot(1:length(newoutboundaries), newoutboundaries, 'chord progression order', 'slice',...
+    length(newoutboundaries), nslices, 'o', 'newnewoutboundaries');
 
 visualizeChordProgression(newoutchordogram, newoutboundaries);
 

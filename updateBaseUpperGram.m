@@ -1,13 +1,9 @@
 % part of the feedback route, update the basegram and uppergram
-function [newbasegram, newuppergram] = updateBaseUpperGram(chordprogression, chordboundaries, S, ut)
+function [newbasegram, newuppergram] = updateBaseUpperGram(bassgram, chordboundaries, S, ut)
 
-lenOut = length(chordprogression);
-newbasegram = zeros(1,lenOut);
-for i = 1:1:lenOut
-    newbasegram(i) = chordprogression{4,i};
-end
+lenOut = length(bassgram);
+newbasegram = bassgram;
 newuppergram = zeros(12,lenOut);
-
 for i = 1:1:lenOut
     % update note salience matrix in terms of boundaries window
     wb = chordboundaries(i):chordboundaries(i+1);
