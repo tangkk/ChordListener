@@ -14,7 +14,7 @@ feedbackpause = 1;
 display('input stage -- read audio from path');
 % input stage
 root = '../AudioSamples/';
-audio = 'haoting/haoting.mp3';
+audio = 'haoting/haoting-002.mp3';
 path = [root audio];
 [x, fs] = myInput(path);
 
@@ -28,8 +28,10 @@ display('frontend -- from input to harmonic salience matrix');
 wl = 4096;
 hopsize = 512;
 X = mySpectrogram(x, wl, hopsize);
+sizeX = size(X);
+nslices = sizeX(2);
 tk = (1/fs)*(1:length(x));
-kk = (1:length(x));
+kk = (1:nslices);
 ff = fs/2*linspace(0,1,wl/2);
 myImagePlot(X, kk, ff, 'slice', 'Hz', 'spectrogram');
 
@@ -48,7 +50,6 @@ Ss = Ms*X;
 Sc = Mc*X;
 Spre = Sc.*Sc;
 sizeM = size(Ms);
-sizeX = size(X);
 ps = 1:sizeM(1);
 myImagePlot(Ss, kk, ps, 'slice', '1/3 semitone', 'simple tone salience matrix');
 myImagePlot(Sc, kk, ps, 'slice', '1/3 semitone', 'complex tone salience matrix');
@@ -68,7 +69,6 @@ Sprec = Scn(1:3:end,:) + Scn(2:3:end,:) + Scn(3:3:end,:);
 S = Spres.*Sprec;
 sizeS = size(S);
 ntones = sizeS(1);
-nslices = sizeS(2);
 S = normalizeGram(S);
 p = 1:ntones;
 myImagePlot(S, kk, p, 'slice', 'semitone', 'note salience matrix');
@@ -96,7 +96,8 @@ myLinePlot(1:length(Sb), Sb, 'slice', 'semitone',...
 
 % harmonic change filter (detect harmonic change boundaries)ht = 0.1;
 ht = 0.1;
-[Sh, Shv, Shc, nchords] = harmonicChangeFilter(Sg, Sb, So, ht);
+bc = 6;
+[Sh, Shv, Shc, nchords] = harmonicChangeFilter(Sg, Sb, So, ht, bc);
 myImagePlot(Sh, kk, p, 'slice', 'semitone', 'harmonic bounded salience matrix');
 myImagePlot(Shv, kk(1:nchords), p, 'chord progression order',...
     'semitone', 'harmonic change matrix');
