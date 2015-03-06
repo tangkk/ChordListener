@@ -1,0 +1,11 @@
+On using this software:
+To use this piece of software, you must acknowledge the author:
+Deng Junqi (tangkk)
+dengjunqi06323011@gmail.com
+
+On building the testcases:
+When spliting audio into regions, use REAPER(http://www.reaper.fm/) to do the spliting, then use the "Batch file/item converter" built-in
+to export the splitted regions. (keyboard shortcut - ctrl+shift+f) Note that don't use the "Render" function since it will not exactly export what's bounded by the regions.
+
+We can use this to split a long piece of audio into short pieces, or split it into chord regions so as to build the
+ground truths for chord recognition algorithms
