@@ -16,3 +16,5 @@ for i = 1:1:lenOut
     upg = [upg(4:end);upg(1:3)];
     newuppergram(:,i) = upg;
 end
+
+newuppergram = normalizeGram(newuppergram);

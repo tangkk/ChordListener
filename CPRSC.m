@@ -14,7 +14,7 @@ feedbackpause = 0;
 display('input stage -- read audio from path');
 % input stage
 root = '../AudioSamples/';
-audio = 'feijichangde1030/feijichangde1030.02.mp3';
+audio = 'haoting/haoting.07.mp3';
 path = [root audio];
 [x, fs] = myInput(path);
 
@@ -139,7 +139,7 @@ myLinePlot(1:length(outbassgram), outbassgram, 'chord progression order', 'semit
 myLinePlot(1:length(outboundaries), outboundaries, 'chord progression order', 'slice',...
     length(outboundaries), nslices, 'o', 'outboundaries');
 
-visualizeChordProgression(outchordogram, outboundaries);
+visualizeChordProgression(outchordogram, outbassgram, outboundaries);
 
 writeChordProgression(path, nslices, hopsize, fs, outchordogram, outboundaries);
 
@@ -157,8 +157,8 @@ ut = 1;
 [newbasegram, newuppergram] = updateBaseUpperGram(outbassgram, outboundaries, S, ut);
 kh = 1:length(newbasegram);
 ph = 1:12;
-myLinePlot(kh, newbasegram(1,:), 'chord progression order', 'semitone', nchords, 12, 'o', 'basegram', 0:12, bassnotenames);
-myImagePlot(newuppergram, kh, ph, 'chord progression order', 'semitone', 'uppergram', ph,treblenotenames);
+myLinePlot(kh, newbasegram(1,:), 'chord progression order', 'semitone', nchords, 12, 'o', 'newbasegram', 0:12, bassnotenames);
+myImagePlot(newuppergram, kh, ph, 'chord progression order', 'semitone', 'newuppergram', ph,treblenotenames);
 
 % ****** feedback back end ****** %
 newchordogram = computeChordogram(newbasegram, newuppergram, chordmode);
@@ -172,7 +172,7 @@ myLinePlot(1:length(newoutbassgram), newoutbassgram, 'chord progression order', 
 myLinePlot(1:length(newoutboundaries), newoutboundaries, 'chord progression order', 'slice',...
     length(newoutboundaries), nslices, 'o', 'newoutboundaries');
 
-visualizeChordProgression(newoutchordogram, newoutboundaries);
+visualizeChordProgression(newoutchordogram, newoutbassgram, newoutboundaries);
 
 writeChordProgression(path, nslices, hopsize, fs, newoutchordogram, newoutboundaries);
 

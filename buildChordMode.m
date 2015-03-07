@@ -36,58 +36,58 @@ function chordmode = buildChordMode
 s = 0.5; % seventh reduce factor
 c = 0.3; % slash chord reduce factor
 slashchordcomp = 0;
-nchordtype = 28;
+nchordtype = 22;
 chordmode = cell(3,nchordtype); %[dif; type; weight]
 
 idx = 1;
 
 chordmode{1,idx} = [4,7];
-chordmode{2,idx} = 'maj';
+chordmode{2,idx} = '';
 chordmode{3,idx} = [1,1];
 idx = idx + 1;
 
 chordmode{1,idx} = [3,7];
-chordmode{2,idx} = 'min';
+chordmode{2,idx} = 'm';
 chordmode{3,idx} = [1,1];
 idx = idx + 1;
 
 chordmode{1,idx} = [4,8];
-chordmode{2,idx} = 'aug';
+chordmode{2,idx} = '+';
 chordmode{3,idx} = [1,1];
 idx = idx + 1;
 
 chordmode{1,idx} = [3,6];
-chordmode{2,idx} = 'dim';
+chordmode{2,idx} = '-';
 chordmode{3,idx} = [1,1];
 idx = idx + 1;
 
 chordmode{1,idx} = [4,7,11];
-chordmode{2,idx} = 'maj7';
+chordmode{2,idx} = 'M7';
 chordmode{3,idx} = [1,1-s,s];
 idx = idx + 1;
 
 chordmode{1,idx} = [3,7,10];
-chordmode{2,idx} = 'min7';
+chordmode{2,idx} = 'm7';
 chordmode{3,idx} = [1,1-s,s];
 idx = idx + 1;
 
 chordmode{1,idx} = [3,7,11];
-chordmode{2,idx} = 'minmaj7';
+chordmode{2,idx} = 'mM7';
 chordmode{3,idx} = [1,1-s,s];
 idx = idx + 1;
 
 chordmode{1,idx} = [4,7,10];
-chordmode{2,idx} = 'dom7';
+chordmode{2,idx} = '7';
 chordmode{3,idx} = [1,1-s,s];
 idx = idx + 1;
 
 chordmode{1,idx} = [4,9];
-chordmode{2,idx} = 'maj6';
+chordmode{2,idx} = '6';
 chordmode{3,idx} = [1,1];
 idx = idx + 1;
 
 chordmode{1,idx} = [3,9];
-chordmode{2,idx} = 'min6';
+chordmode{2,idx} = 'm6';
 chordmode{3,idx} = [1,1];
 idx = idx + 1;
 
@@ -102,17 +102,17 @@ chordmode{3,idx} = [1,1];
 idx = idx + 1;
 
 chordmode{1,idx} = [3,8];
-chordmode{2,idx} = 'maj/3';
+chordmode{2,idx} = '/3';
 chordmode{3,idx} = [1,1];
 idx = idx + 1;
 
 chordmode{1,idx} = [5,9];
-chordmode{2,idx} = 'maj/5';
+chordmode{2,idx} = '/5';
 chordmode{3,idx} = [1,1];
 idx = idx + 1;
 
 chordmode{1,idx} = [2,5,9];
-chordmode{2,idx} = 'min/7';
+chordmode{2,idx} = 'm/7';
 if slashchordcomp
     chordmode{3,idx} = [1,1-c,1-c];
 else
@@ -121,7 +121,7 @@ end
 idx = idx + 1;
 
 chordmode{1,idx} = [2,6,9];
-chordmode{2,idx} = 'maj/7';
+chordmode{2,idx} = '/7';
 if slashchordcomp
     chordmode{3,idx} = [1,1-c,1-c];
 else
@@ -130,7 +130,7 @@ end
 idx = idx + 1;
 
 chordmode{1,idx} = [1,5,8];
-chordmode{2,idx} = 'maj/7+';
+chordmode{2,idx} = '/7+';
 if slashchordcomp
     chordmode{3,idx} = [1,1-c,1-c];
 else
@@ -139,7 +139,7 @@ end
 idx = idx + 1;
 
 chordmode{1,idx} = [2,5,10];
-chordmode{2,idx} = 'maj/2';
+chordmode{2,idx} = '/2';
 if slashchordcomp
     chordmode{3,idx} = [1,1-c,1-c];
 else
@@ -148,12 +148,12 @@ end
 idx = idx + 1;
 
 chordmode{1,idx} = 4;
-chordmode{2,idx} = 'maj';
+chordmode{2,idx} = '';
 chordmode{3,idx} = 1;
 idx = idx + 1;
 
 chordmode{1,idx} = 3;
-chordmode{2,idx} = 'min';
+chordmode{2,idx} = 'm';
 chordmode{3,idx} = 1;
 idx = idx + 1;
 
@@ -165,33 +165,33 @@ idx = idx + 1;
 chordmode{1,idx} = 2;
 chordmode{2,idx} = '2';
 chordmode{3,idx} = 1;
-idx = idx + 1;
+% idx = idx + 1;
 
-chordmode{1,idx} = 5;
-chordmode{2,idx} = '4';
-chordmode{3,idx} = 1;
-idx = idx + 1;
-
-chordmode{1,idx} = 6;
-chordmode{2,idx} = '4#';
-chordmode{3,idx} = 1;
-idx = idx + 1;
-
-chordmode{1,idx} = 8;
-chordmode{2,idx} = '6b';
-chordmode{3,idx} = 1;
-idx = idx + 1;
-
-chordmode{1,idx} = 9;
-chordmode{2,idx} = '6';
-chordmode{3,idx} = 1;
-idx = idx + 1;
-
-chordmode{1,idx} = 10;
-chordmode{2,idx} = '7b';
-chordmode{3,idx} = 1;
-idx = idx + 1;
-
-chordmode{1,idx} = 11;
-chordmode{2,idx} = '7';
-chordmode{3,idx} = 1;
+% chordmode{1,idx} = 5;
+% chordmode{2,idx} = '4';
+% chordmode{3,idx} = 1;
+% idx = idx + 1;
+% 
+% chordmode{1,idx} = 6;
+% chordmode{2,idx} = '4#';
+% chordmode{3,idx} = 1;
+% idx = idx + 1;
+% 
+% chordmode{1,idx} = 8;
+% chordmode{2,idx} = '6b';
+% chordmode{3,idx} = 1;
+% idx = idx + 1;
+% 
+% chordmode{1,idx} = 9;
+% chordmode{2,idx} = '6';
+% chordmode{3,idx} = 1;
+% idx = idx + 1;
+% 
+% chordmode{1,idx} = 10;
+% chordmode{2,idx} = '7b';
+% chordmode{3,idx} = 1;
+% idx = idx + 1;
+% 
+% chordmode{1,idx} = 11;
+% chordmode{2,idx} = '7';
+% chordmode{3,idx} = 1;
