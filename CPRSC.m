@@ -14,7 +14,7 @@ feedbackpause = 0;
 display('input stage -- read audio from path');
 % input stage
 root = '../AudioSamples/';
-audio = 'haoting/haoting.07.mp3';
+audio = 'haoting/haoting.01.mp3';
 path = [root audio];
 [x, fs] = myInput(path);
 
@@ -154,7 +154,8 @@ end
 display('feedback-A -- use chord boundaries information to do it again');
 
 ut = 1;
-[newbasegram, newuppergram] = updateBaseUpperGram(outbassgram, outboundaries, S, ut);
+nt = 0.25;
+[newbasegram, newuppergram] = updateBaseUpperGram(outboundaries, S, So, ut, nt);
 kh = 1:length(newbasegram);
 ph = 1:12;
 myLinePlot(kh, newbasegram(1,:), 'chord progression order', 'semitone', nchords, 12, 'o', 'newbasegram', 0:12, bassnotenames);
