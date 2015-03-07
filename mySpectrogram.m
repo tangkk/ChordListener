@@ -13,6 +13,8 @@ for i = wl/2+1:hopsize:len - wl/2
     raw = x(raws:rawe).*w;
     fftraw = fft(raw);
     X(:,idx) = 2*abs(fftraw(1:wl/2));
-    X(:,idx) = X(:,idx) / max(X(:,idx));
+    if max(X(:,idx)) > 0
+        X(:,idx) = X(:,idx) / max(X(:,idx));
+    end
     idx = idx + 1;
 end
