@@ -14,7 +14,7 @@ feedbackpause = 0;
 display('input stage -- read audio from path');
 % input stage
 root = '../AudioSamples/';
-audio = 'haoting/haoting.02.mp3';
+audio = 'haoting/haoting.04.mp3';
 path = [root audio];
 [x, fs] = myInput(path);
 
@@ -74,7 +74,7 @@ p = 1:ntones;
 myImagePlot(S, kk, p, 'slice', 'semitone', 'note salience matrix');
 
 % gestaltize the note salience matrix
-wgmax = 20;
+wgmax = 10;
 wpg = 0;
 wng = 10;
 Sg = gestaltNoteSalience(S,wgmax, wpg, wng);

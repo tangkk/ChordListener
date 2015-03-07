@@ -1,7 +1,7 @@
 % gestalize process
 % if within a gestalt window ahead there's a non-zero bin, compensate the
 % blank in between, the length of the gestalt window vary according to
-% the accumulated non-blank length, but with maximum value of 20 slices
+% the accumulated non-blank length, but with maximum value of wgmax slices
 function Sg = gestaltNoteSalience(S,wgmax, wpg, wng)
 
 sizeS = size(S);

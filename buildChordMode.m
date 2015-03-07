@@ -16,10 +16,10 @@
 % 1->2->5 sus2         1,3,8            2,7                      1,1
 % 1->3b->6b maj/3      1,4,9            3,8                      1,1
 % 1->4->6 maj/5        1,6,10           5,9                      1,1
-% 1->2->4->6 min/7     1,3,6,10         2,5,9                    1,1,1
-% 1->2->4#->6 maj/7    1,3,7,10         2,6,9                    1,1,1
-% 1->1#->4->6b maj/7+  1,2,6,9          1,5,8                    1,1,1
-% 1->2->4->7b maj/2    1,3,6,11         2,5,10                   1,1,1
+% 1->2->4->6 min/7     1,3,6,10         2,5,9                    1,1-c,1-c
+% 1->2->4#->6 maj/7    1,3,7,10         2,6,9                    1,1-c,1-c
+% 1->1#->4->6b maj/7+  1,2,6,9          1,5,8                    1,1-c,1-c
+% 1->2->4->7b maj/2    1,3,6,11         2,5,10                   1,1-c,1-c
 % 1->3 maj             1,5              4                        1
 % 1->3b min            1,4              3                        1
 % 1->5 5               1,8              7                        1
@@ -34,7 +34,7 @@
 function chordmode = buildChordMode
 
 s = 0.5; % seventh reduce factor
-sl = 0.5; % slash chord reduce factor
+c = 0.3; % slash chord reduce factor
 nchordtype = 28;
 chordmode = cell(3,nchordtype); %[dif; type; weight]
 
@@ -112,22 +112,22 @@ idx = idx + 1;
 
 chordmode{1,idx} = [2,5,9];
 chordmode{2,idx} = 'min/7';
-chordmode{3,idx} = [1,1,1];
+chordmode{3,idx} = [1,1-c,1-c];
 idx = idx + 1;
 
 chordmode{1,idx} = [2,6,9];
 chordmode{2,idx} = 'maj/7';
-chordmode{3,idx} = [1,1,1];
+chordmode{3,idx} = [1,1-c,1-c];
 idx = idx + 1;
 
 chordmode{1,idx} = [1,5,8];
 chordmode{2,idx} = 'maj/7+';
-chordmode{3,idx} = [1,1,1];
+chordmode{3,idx} = [1,1-c,1-c];
 idx = idx + 1;
 
 chordmode{1,idx} = [2,5,10];
 chordmode{2,idx} = 'maj/2';
-chordmode{3,idx} = [1,1,1];
+chordmode{3,idx} = [1,1-c,1-c];
 idx = idx + 1;
 
 chordmode{1,idx} = 4;
