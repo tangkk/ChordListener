@@ -1,10 +1,10 @@
 % this is another gestalize process that merge chords with very short
 % duration into the chords nearby with reasonable duration
-function [outchordogram, outbassgram, outboundaries] = mergeDifferentChords(outchordogram, outbassgram, outboundaries)
+function [chordogram, bassgram, boundaries] = mergeDifferentChords(chordogram, bassgram, boundaries)
 
 % chord beat duration calculation
-nchords = length(outchordogram);
-difbdrys = outboundaries(2:end) - outboundaries(1:end-1);
+nchords = length(chordogram);
+difbdrys = boundaries(2:end) - boundaries(1:end-1);
 chordbeats = round(difbdrys ./ (median(difbdrys) / 4));
 
 % merge candidates selection
@@ -25,7 +25,7 @@ end
 mergeebdryidxes = mergeecdgidxes + 1;
 
 % merge process
-outchordogram(mergeecdgidxes) = [];
-outbassgram(mergeecdgidxes) = [];
-outboundaries(mergeebdryidxes) = [];
+chordogram(mergeecdgidxes) = [];
+bassgram(mergeecdgidxes) = [];
+boundaries(mergeebdryidxes) = [];
 

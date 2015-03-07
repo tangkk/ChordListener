@@ -1,17 +1,17 @@
 % combine the same chords
-function [outchordogram, outbassgram, chordboundaries] = combineSameChords(chordogram, Shc)
+function [outchordogram, outbassgram, chordboundaries] = combineSameChords(inchordogram, Shc)
 
-prevchord = strcat(chordogram{3,1},chordogram{2,1});
-outchordogram = cell(1,length(chordogram));
-outbassgram = zeros(1,length(chordogram));
+prevchord = strcat(inchordogram{3,1},inchordogram{2,1});
+outchordogram = cell(1,length(inchordogram));
+outbassgram = zeros(1,length(inchordogram));
 outchordogram{1} = prevchord;
-outbassgram(1) = chordogram{1,1};
-chordboundaries = zeros(1,length(chordogram)+1);
+outbassgram(1) = inchordogram{1,1};
+chordboundaries = zeros(1,length(inchordogram)+1);
 chordboundaries(1) = Shc(1);
 outidx = 2;
-for i = 2:1:length(chordogram)
-    curchord = strcat(chordogram{3,i},chordogram{2,i});
-    curbass = chordogram{1,i};
+for i = 2:1:length(inchordogram)
+    curchord = strcat(inchordogram{3,i},inchordogram{2,i});
+    curbass = inchordogram{1,i};
     if strcmp(curchord,prevchord)
         continue;
     else
