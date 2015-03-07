@@ -170,7 +170,7 @@ newchordogram = computeChordogram(newbasegram, newuppergram, chordmode);
 myLinePlot(1:length(newoutbassgram), newoutbassgram, 'chord progression order', 'semitone',...
     length(newoutbassgram), 12, 'o', 'newoutbassgram', 0:12, bassnotenames);
 myLinePlot(1:length(newoutboundaries), newoutboundaries, 'chord progression order', 'slice',...
-    length(newoutboundaries), nslices, 'o', 'newnewoutboundaries');
+    length(newoutboundaries), nslices, 'o', 'newoutboundaries');
 
 visualizeChordProgression(newoutchordogram, newoutboundaries);
 

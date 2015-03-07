@@ -1,4 +1,4 @@
-% the chord mode is built this way with full chord notes without priority
+ % the chord mode is built this way with full chord notes without priority
 % there will be no "N" chord
 %
 % --chord--            --digital--     --digital difference--  --weight--
@@ -16,10 +16,10 @@
 % 1->2->5 sus2         1,3,8            2,7                      1,1
 % 1->3b->6b maj/3      1,4,9            3,8                      1,1
 % 1->4->6 maj/5        1,6,10           5,9                      1,1
-% 1->2->4 min/7        1,3,6            2,5                      1,1
-% 1->2->4# maj/7       1,3,7            2,6                      1,1
-% 1->1#->4 maj/7+      1,2,6            1,5                      1,1
-% 1->2->7b maj/2       1,3,11           2,10                     1,1
+% 1->2->4->6 min/7     1,3,6,10         2,5,9                    1,1,1
+% 1->2->4#->6 maj/7    1,3,7,10         2,6,9                    1,1,1
+% 1->1#->4->6b maj/7+  1,2,6,9          1,5,8                    1,1,1
+% 1->2->4->7b maj/2    1,3,6,11         2,5,10                   1,1,1
 % 1->3 maj             1,5              4                        1
 % 1->3b min            1,4              3                        1
 % 1->5 5               1,8              7                        1
@@ -33,7 +33,8 @@
 
 function chordmode = buildChordMode
 
-srf = 0.5; % seventh reduce factor
+s = 0.5; % seventh reduce factor
+sl = 0.5; % slash chord reduce factor
 nchordtype = 28;
 chordmode = cell(3,nchordtype); %[dif; type; weight]
 
@@ -61,22 +62,22 @@ idx = idx + 1;
 
 chordmode{1,idx} = [4,7,11];
 chordmode{2,idx} = 'maj7';
-chordmode{3,idx} = [1,1-srf,srf];
+chordmode{3,idx} = [1,1-s,s];
 idx = idx + 1;
 
 chordmode{1,idx} = [3,7,10];
 chordmode{2,idx} = 'min7';
-chordmode{3,idx} = [1,1-srf,srf];
+chordmode{3,idx} = [1,1-s,s];
 idx = idx + 1;
 
 chordmode{1,idx} = [3,7,11];
 chordmode{2,idx} = 'minmaj7';
-chordmode{3,idx} = [1,1-srf,srf];
+chordmode{3,idx} = [1,1-s,s];
 idx = idx + 1;
 
 chordmode{1,idx} = [4,7,10];
 chordmode{2,idx} = 'dom7';
-chordmode{3,idx} = [1,1-srf,srf];
+chordmode{3,idx} = [1,1-s,s];
 idx = idx + 1;
 
 chordmode{1,idx} = [4,9];
@@ -109,24 +110,24 @@ chordmode{2,idx} = 'maj/5';
 chordmode{3,idx} = [1,1];
 idx = idx + 1;
 
-chordmode{1,idx} = [2,5];
+chordmode{1,idx} = [2,5,9];
 chordmode{2,idx} = 'min/7';
-chordmode{3,idx} = [1,1];
+chordmode{3,idx} = [1,1,1];
 idx = idx + 1;
 
-chordmode{1,idx} = [2,6];
+chordmode{1,idx} = [2,6,9];
 chordmode{2,idx} = 'maj/7';
-chordmode{3,idx} = [1,1];
+chordmode{3,idx} = [1,1,1];
 idx = idx + 1;
 
-chordmode{1,idx} = [1,5];
+chordmode{1,idx} = [1,5,8];
 chordmode{2,idx} = 'maj/7+';
-chordmode{3,idx} = [1,1];
+chordmode{3,idx} = [1,1,1];
 idx = idx + 1;
 
-chordmode{1,idx} = [2,10];
+chordmode{1,idx} = [2,5,10];
 chordmode{2,idx} = 'maj/2';
-chordmode{3,idx} = [1,1];
+chordmode{3,idx} = [1,1,1];
 idx = idx + 1;
 
 chordmode{1,idx} = 4;
