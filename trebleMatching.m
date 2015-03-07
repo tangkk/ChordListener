@@ -1,5 +1,11 @@
 function [treble, ctidx] = trebleMatching(bass,upper,template, templatetype)
 
+if sum(upper) >= 5 % this is the 'no-chord' condition
+    treble = '0';
+    ctidx = 0;
+    return;
+end
+
 % match by chord tree priority
 if strcmp(templatetype,'chordtree')
     chordtree = template;

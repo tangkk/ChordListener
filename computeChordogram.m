@@ -22,9 +22,16 @@ for j = 1:1:nchords
     bass = basegram(1,j); % now we don't need the bass strength information
     upper = uppergram(:,j);
     [treble, ctidx] = trebleMatching(bass, upper, chordtemplate,temptype);
-    chordogram{1,j} = bass;
-    chordogram{2,j} = treble;
-    upperbass = bass2upperbass(bass, treble);
-    chordogram{3,j} = num2bass(upperbass);
-    chordogram{4,j} = ctidx;
+    if strcmp(treble,'0')
+        chordogram{1,j} = 0;
+        chordogram{2,j} = '0';
+        chordogram{3,j} = 'N';
+        chordogram{4,j} = 0;
+    else
+        chordogram{1,j} = bass;
+        chordogram{2,j} = treble;
+        upperbass = bass2upperbass(bass, treble);
+        chordogram{3,j} = num2bass(upperbass);
+        chordogram{4,j} = ctidx;
+    end
 end

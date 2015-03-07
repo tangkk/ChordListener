@@ -32,8 +32,12 @@ for j = 1:1:sizeS(2)
                 wh = whs:whe;
             end
             for ii = max(oldonset - bc,1):1:sizeS(1) % count from oldonset - bc (elsewise bass inference)
-                gesiiwh = mean(Sg(ii,wh));
-                Sh(ii,wh) = ones(1,length(wh))*gesiiwh;
+                Sw = Sg(ii,wh);
+                Sw(Sw>0) = 1;
+                if sum(Sw) > 0.25*length(wh) % if the num of of light bin larger than 1/4 of wh
+                    gesiiwh = mean(Sg(ii,wh));
+                    Sh(ii,wh) = ones(1,length(wh))*gesiiwh;
+                end
             end
             % make sure the oldonset place has at least something
             Sh(oldonset,wh) = min(Sh(oldonset,wh) + 0.5, 1);
