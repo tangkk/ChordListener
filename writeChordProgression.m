@@ -20,13 +20,18 @@ s = strcat('[',timestr,']');
 fprintf(fw, formatSpec1, s);
 fclose(fw);
 
-% wordlrc = [audiopath(1:end-4) '.word.lrc'];
-% if exist(wordlrc, 'file')
-%     textword = fileread(wordlrc);
-%     textchord = fileread(chordlrc);
-%     textsheet = [textword textchord];
-%     sheetlrc = [audiopath(1:end-4) '.sheet.lrc'];
-%     fw = fopen(sheetlrc,'w');
-%     fprintf(fw, formatSpec1,textsheet);
-%     fclose(fw);
-% end
+wordlrc = [audiopath(1:end-4) '.word.lrc'];
+if exist(wordlrc, 'file')
+    fword = fopen(wordlrc,'r');
+    fsheet = fopen(chordlrc,'r');
+    binword = fread(fword);
+    binchord = fread(fsheet);
+    binsheet = [binword ; binchord];
+    fclose(fsheet);
+    fclose(fword);
+    sheetlrc = [audiopath(1:end-4) '.sheet.lrc'];
+    fw = fopen(sheetlrc,'w');
+    fwrite(fw, binsheet);
+    fclose(fw);
+    
+end

@@ -35,6 +35,7 @@ function chordmode = buildChordMode
 
 s = 0.5; % seventh reduce factor
 c = 0.3; % slash chord reduce factor
+slashchordcomp = 0;
 nchordtype = 28;
 chordmode = cell(3,nchordtype); %[dif; type; weight]
 
@@ -112,22 +113,38 @@ idx = idx + 1;
 
 chordmode{1,idx} = [2,5,9];
 chordmode{2,idx} = 'min/7';
-chordmode{3,idx} = [1,1-c,1-c];
+if slashchordcomp
+    chordmode{3,idx} = [1,1-c,1-c];
+else
+    chordmode{3,idx} = [1,1,1];
+end
 idx = idx + 1;
 
 chordmode{1,idx} = [2,6,9];
 chordmode{2,idx} = 'maj/7';
-chordmode{3,idx} = [1,1-c,1-c];
+if slashchordcomp
+    chordmode{3,idx} = [1,1-c,1-c];
+else
+    chordmode{3,idx} = [1,1,1];
+end
 idx = idx + 1;
 
 chordmode{1,idx} = [1,5,8];
 chordmode{2,idx} = 'maj/7+';
-chordmode{3,idx} = [1,1-c,1-c];
+if slashchordcomp
+    chordmode{3,idx} = [1,1-c,1-c];
+else
+    chordmode{3,idx} = [1,1,1];
+end
 idx = idx + 1;
 
 chordmode{1,idx} = [2,5,10];
 chordmode{2,idx} = 'maj/2';
-chordmode{3,idx} = [1,1-c,1-c];
+if slashchordcomp
+    chordmode{3,idx} = [1,1-c,1-c];
+else
+    chordmode{3,idx} = [1,1,1];
+end
 idx = idx + 1;
 
 chordmode{1,idx} = 4;
