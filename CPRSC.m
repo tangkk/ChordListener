@@ -14,7 +14,7 @@ feedbackpause = 0;
 display('input stage -- read audio from path');
 % input stage
 root = '../AudioSamples/';
-audio = 'haoting/haoting.01.mp3';
+audio = 'haoting/haoting.07.mp3';
 path = [root audio];
 [x, fs] = myInput(path);
 
@@ -130,9 +130,9 @@ chordmode = buildChordMode;
 
 chordogram = computeChordogram(basegram, uppergram, chordmode);
 
-[outchordogram, outbassgram, outboundaries] = combineSameChords(chordogram, Shc);
+[outchordogram, outbassgram, outtreblegram, outboundaries] = combineSameChords(chordogram, Shc);
 
-[outchordogram, outbassgram, outboundaries] = mergeDifferentChords(outchordogram, outbassgram, outboundaries); 
+[outchordogram, outbassgram, outtreblegram, outboundaries] = mergeDifferentChords(outchordogram, outbassgram, outtreblegram, outboundaries); 
 
 myLinePlot(1:length(outbassgram), outbassgram, 'chord progression order', 'semitone',...
     length(outbassgram), 12, 'o', 'outbassgram', 0:12, bassnotenames);
@@ -164,9 +164,9 @@ myImagePlot(newuppergram, kh, ph, 'chord progression order', 'semitone', 'newupp
 % ****** feedback back end ****** %
 newchordogram = computeChordogram(newbasegram, newuppergram, chordmode);
 
-[newoutchordogram, newoutbassgram, newoutboundaries] = combineSameChords(newchordogram, outboundaries);
+[newoutchordogram, newoutbassgram, newouttreblegram, newoutboundaries] = combineSameChords(newchordogram, outboundaries);
 
-[newoutchordogram, newoutbassgram, newoutboundaries] = mergeDifferentChords(newoutchordogram, newoutbassgram, newoutboundaries); 
+[newoutchordogram, newoutbassgram, newouttreblegram, newoutboundaries] = mergeDifferentChords(newoutchordogram, newoutbassgram, newouttreblegram, newoutboundaries); 
 
 myLinePlot(1:length(newoutbassgram), newoutbassgram, 'chord progression order', 'semitone',...
     length(newoutbassgram), 12, 'o', 'newoutbassgram', 0:12, bassnotenames);

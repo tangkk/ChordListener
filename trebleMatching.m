@@ -42,5 +42,10 @@ if strcmp(templatetype, 'chordmode')
         treblescore(i) = upper'*uppermode;
     end
     [maxscore,ctidx] = max(treblescore);
-    treble = chordmode{2,ctidx};
+    if maxscore > 0
+        treble = chordmode{2,ctidx};
+    else
+        treble = '0';
+        ctidx = 0;
+    end
 end

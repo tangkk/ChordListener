@@ -23,9 +23,9 @@ for j = 1:1:nchords
     upper = uppergram(:,j);
     [treble, ctidx] = trebleMatching(bass, upper, chordtemplate,temptype);
     if strcmp(treble,'0')
-        chordogram{1,j} = 0;
+        chordogram{1,j} = bass;
         chordogram{2,j} = '0';
-        chordogram{3,j} = 'N';
+        chordogram{3,j} = num2bass(bass);
         chordogram{4,j} = 0;
     else
         chordogram{1,j} = bass;

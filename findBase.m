@@ -16,5 +16,12 @@ for j = 1:1:nslices
         end
     end
 end
-
-[baseval,base] = max(basevec);
+basevec = basevec ./ max(basevec);
+basevec(basevec <= 0.5) = 0;
+base = 0;
+for i = 1:1:ntones
+    if basevec(i) > 0
+        base = i;
+        break;
+    end
+end
