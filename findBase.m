@@ -7,7 +7,7 @@ basevec = zeros(1,ntones);
 for j = 1:1:nslices
     for i = 1:1:ntones
         if Swo(i,j) > 0 % onset salience with priority
-            basevec(i) = basevec(i) + Swo(i,j);
+            basevec(i) = basevec(i) + 1;
             break;
         end
         if Sw(i,j) > 0
