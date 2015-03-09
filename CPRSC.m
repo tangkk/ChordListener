@@ -14,7 +14,7 @@ feedbackpause = 0;
 display('input stage -- read audio from path');
 % input stage
 root = '../AudioSamples/';
-audio = 'haoting/haoting.07.mp3';
+audio = 'tuihou/tuihou.01.mp3';
 path = [root audio];
 [x, fs] = myInput(path);
 
