@@ -1,7 +1,7 @@
 % plot various gram as an image with a scaling factor
 function myImagePlot(img, x, y, xl, yl, tit, ytl, ytlab)
+sfactor = 100;
 if nargin == 6
-    sfactor = 100;
     figure;
     image(x,y,sfactor*img);
     set(gca,'YDir','normal');
@@ -10,7 +10,6 @@ if nargin == 6
     title(tit);
 end
 if nargin == 8
-    sfactor = 100;
     figure;
     image(x,y,sfactor*img);
     set(gca,'YDir','normal');
