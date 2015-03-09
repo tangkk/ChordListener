@@ -132,7 +132,9 @@ chordogram = computeChordogram(basegram, uppergram, chordmode);
 
 [outchordogram, outbassgram, outtreblegram, outboundaries] = combineSameChords(chordogram, Shc);
 
-[outchordogram, outbassgram, outtreblegram, outboundaries] = mergeDifferentChords(outchordogram, outbassgram, outtreblegram, outboundaries); 
+grain = 1;
+[outchordogram, outbassgram, outtreblegram, outboundaries] = mergeDifferentChords(outchordogram, outbassgram,...
+    outtreblegram, outboundaries, grain); 
 
 myLinePlot(1:length(outbassgram), outbassgram, 'chord progression order', 'semitone',...
     length(outbassgram), 12, 'o', 'outbassgram', 0:12, bassnotenames);
@@ -166,7 +168,9 @@ newchordogram = computeChordogram(newbasegram, newuppergram, chordmode);
 
 [newoutchordogram, newoutbassgram, newouttreblegram, newoutboundaries] = combineSameChords(newchordogram, outboundaries);
 
-[newoutchordogram, newoutbassgram, newouttreblegram, newoutboundaries] = mergeDifferentChords(newoutchordogram, newoutbassgram, newouttreblegram, newoutboundaries); 
+newgrain = 1;
+[newoutchordogram, newoutbassgram, newouttreblegram, newoutboundaries] =...
+    mergeDifferentChords(newoutchordogram, newoutbassgram, newouttreblegram, newoutboundaries, newgrain); 
 
 myLinePlot(1:length(newoutbassgram), newoutbassgram, 'chord progression order', 'semitone',...
     length(newoutbassgram), 12, 'o', 'newoutbassgram', 0:12, bassnotenames);
