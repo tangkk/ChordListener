@@ -14,7 +14,7 @@ feedbackpause = 0;
 display('input stage -- read audio from path');
 % input stage
 root = '../AudioSamples/';
-audio = 'tuihou/tuihou.01.mp3';
+audio = 'woruciaini/woruciaini.10.mp3';
 path = [root audio];
 [x, fs] = myInput(path);
 
@@ -75,9 +75,7 @@ myImagePlot(S, kk, p, 'slice', 'semitone', 'note salience matrix');
 
 % gestaltize the note salience matrix
 wgmax = 10;
-wpg = 0;
-wng = 10;
-Sg = gestaltNoteSalience(S,wgmax, wpg, wng);
+Sg = gestaltNoteSalience(S,wgmax);
 myImagePlot(Sg, kk, p, 'slice', 'semitone', 'gestalt note salience matrix');
 
 % onset filter (roughly detect the note onsets)

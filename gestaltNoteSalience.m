@@ -1,14 +1,16 @@
 % gestalize process
-% if within a gestalt window ahead there's a non-zero bin, compensate the
-% blank in between, the length of the gestalt window vary according to
-% the accumulated non-blank length, but with maximum value of wgmax slices
-function Sg = gestaltNoteSalience(S,wgmax, wpg, wng)
+function Sg = gestaltNoteSalience(S,wgmax)
 
+% if within a gestalt window ahead there's a non-zero bin, compensate the
+% blank in between, the length of the gestalt window varies according to
+% the accumulated non-blank length, but with maximum value of wgmax slices
 sizeS = size(S);
 Sg = zeros(sizeS(1), sizeS(2));
 for i = 1:1:sizeS(1)
     trackidx = 1;
     isblank = 0;
+    lenBlank = 0;
+    wpg = 0;
     for j = 1:1:sizeS(2)
         if S(i,j) > 0
             % compensate the gestalt
@@ -31,15 +33,16 @@ for i = 1:1:sizeS(1)
     end
 end
 
-% input from above, if a piece of salience is shorter than a gestalt window, ignore it
+% input from above, if a piece of salience is shorter than a gestalt window, delete it
 for i = 1:1:sizeS(1)
     trackidx = 1;
+    lenLight = 0;
     islight = 0;
     for j = 1:1:sizeS(2)
         if Sg(i,j) == 0
             if islight == 1;
                 lenLight = j - trackidx;
-                if lenLight <= wng
+                if lenLight <= wgmax
                     Sg(i,trackidx:j-1) = zeros(1,lenLight);
                 end
             end
