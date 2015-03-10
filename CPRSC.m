@@ -14,7 +14,7 @@ feedbackpause = 0;
 display('input stage -- read audio from path');
 % input stage
 root = '../AudioSamples/';
-audio = 'woruciaini/woruciaini.10.mp3';
+audio = '1984/1984.07.mp3';
 path = [root audio];
 [x, fs] = myInput(path);
 
@@ -131,7 +131,7 @@ chordogram = computeChordogram(basegram, uppergram, chordmode);
 [outchordogram, outbassgram, outtreblegram, outboundaries] = combineSameChords(chordogram, Shc);
 
 grain = 1;
-[outchordogram, outbassgram, outtreblegram, outboundaries] = mergeDifferentChords(outchordogram, outbassgram,...
+[outchordogram, outbassgram, outtreblegram, outboundaries] = eliminateShortChords(outchordogram, outbassgram,...
     outtreblegram, outboundaries, grain); 
 
 myLinePlot(1:length(outbassgram), outbassgram, 'chord progression order', 'semitone',...
@@ -168,7 +168,7 @@ newchordogram = computeChordogram(newbasegram, newuppergram, chordmode);
 
 newgrain = 1;
 [newoutchordogram, newoutbassgram, newouttreblegram, newoutboundaries] =...
-    mergeDifferentChords(newoutchordogram, newoutbassgram, newouttreblegram, newoutboundaries, newgrain); 
+    eliminateShortChords(newoutchordogram, newoutbassgram, newouttreblegram, newoutboundaries, newgrain); 
 
 myLinePlot(1:length(newoutbassgram), newoutbassgram, 'chord progression order', 'semitone',...
     length(newoutbassgram), 12, 'o', 'newoutbassgram', 0:12, bassnotenames);

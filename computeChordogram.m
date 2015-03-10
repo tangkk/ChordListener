@@ -13,7 +13,7 @@ sizeTemp = size(chordtemplate);
 if sizeTemp(1) == 2
     temptype = 'chordtree';
 end
-if sizeTemp(1) == 3
+if sizeTemp(1) == 4
     temptype = 'chordmode';
 end
 nchords = length(basegram);
