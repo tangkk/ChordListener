@@ -14,7 +14,7 @@ feedbackpause = 0;
 display('input stage -- read audio from path');
 % input stage
 root = '../AudioSamples/';
-audio = '1984/1984.07.mp3';
+audio = 'putongpengyou/putongpengyou.02.mp3';
 path = [root audio];
 [x, fs] = myInput(path);
 
@@ -33,15 +33,15 @@ nslices = sizeX(2);
 tk = (1/fs)*(1:length(x));
 kk = (1:nslices);
 ff = fs/2*linspace(0,1,wl/2);
-myImagePlot(X, kk, ff, 'slice', 'Hz', 'spectrogram');
+% myImagePlot(X, kk, ff, 'slice', 'Hz', 'spectrogram');
 
 fmin = 27.5; % MIDI note 21
 fmax = 1661; % MIDI note 92
 fratio = 2^(1/36);
 numtones = 72*3;
 [Ms,Mc] = toneProfileGen(wl, numtones, fmin, fmax, fratio, fs);
-myImagePlot(Ms, wl/2, numtones, 'time', '1/3 semitone', 'simple tone profile');
-myImagePlot(Mc, wl/2, numtones, 'time', '1/3 semitone', 'complex tone profile');
+% myImagePlot(Ms, wl/2, numtones, 'time', '1/3 semitone', 'simple tone profile');
+% myImagePlot(Mc, wl/2, numtones, 'time', '1/3 semitone', 'complex tone profile');
 
 % calculate note salience matrix of the stft spectrogram (cosine
 % similarity) (note that this is an additive approach, as contrast to
@@ -51,22 +51,35 @@ Sc = Mc*X;
 Spre = Sc.*Sc;
 sizeM = size(Ms);
 ps = 1:sizeM(1);
-myImagePlot(Ss, kk, ps, 'slice', '1/3 semitone', 'simple tone salience matrix');
-myImagePlot(Sc, kk, ps, 'slice', '1/3 semitone', 'complex tone salience matrix');
-myImagePlot(Ss, kk, ps, 'slice', '1/3 semitone', 'preliminary salience matrix');
+% myImagePlot(Ss, kk, ps, 'slice', '1/3 semitone', 'simple tone salience matrix');
+% myImagePlot(Sc, kk, ps, 'slice', '1/3 semitone', 'complex tone salience matrix');
+% myImagePlot(Spre, kk, ps, 'slice', '1/3 semitone', 'preliminary salience matrix');
 
 % noise reduction process
-sizeNS = size(Spre);
 nt = 0.1;
 Ssn = noteSalienceNoiseReduce(Ss, nt);
 Scn = noteSalienceNoiseReduce(Sc, nt);
-myImagePlot(Ssn, kk, ps, 'slice', '1/3 semitone', 'noised reduced simple tone salience matrix');
-myImagePlot(Scn, kk, ps, 'slice', '1/3 semitone', 'noised reduced complex tone salience matrix');
+Spren = Ssn.*Scn;
+% myImagePlot(Ssn, kk, ps, 'slice', '1/3 semitone', 'noised reduced simple tone salience matrix');
+% myImagePlot(Scn, kk, ps, 'slice', '1/3 semitone', 'noised reduced complex tone salience matrix');
+myImagePlot(Spren, kk, ps, 'slice', '1/3 semitone', 'pre salience matrix');
+
+% long salience compensation process
+st = 0.1;
+bb = 28; % bass bound, only compensate below bass
+wgmax = 10;
+Spren = compensateLongSalience(Spren,wgmax,st,bb);
+myImagePlot(Spren, kk, ps, 'slice', '1/3 semitone', 'compensated pre salience matrix');
+
+% short salience reduction process
+st = 0.0;
+bb = 28; % bass bound, only reduce below bass
+wgmax = 5;
+Spren = reduceShortSalience(Spren,wgmax,st,bb);
+myImagePlot(Spren, kk, ps, 'slice', '1/3 semitone', 'reduced pre salience matrix');
 
 % computer note salience matrix by combining 1/3 semitones into semitones
-Spres = Ssn(1:3:end,:) + Ssn(2:3:end,:) + Ssn(3:3:end,:);
-Sprec = Scn(1:3:end,:) + Scn(2:3:end,:) + Scn(3:3:end,:);
-S = Spres.*Sprec;
+S = Spren(1:3:end,:) + Spren(2:3:end,:) + Spren(3:3:end,:);
 sizeS = size(S);
 ntones = sizeS(1);
 S = normalizeGram(S);
@@ -75,7 +88,10 @@ myImagePlot(S, kk, p, 'slice', 'semitone', 'note salience matrix');
 
 % gestaltize the note salience matrix
 wgmax = 10;
-Sg = gestaltNoteSalience(S,wgmax);
+st = 0.0;
+Sg = gestaltNoteSalience(S,wgmax, st);
+% myImagePlot(Sgpos, kk, p, 'slice', 'semitone', 'positive gestalt note salience matrix');
+% myImagePlot(Sgneg, kk, p, 'slice', 'semitone', 'negative gestalt note salience matrix');
 myImagePlot(Sg, kk, p, 'slice', 'semitone', 'gestalt note salience matrix');
 
 % onset filter (roughly detect the note onsets)
@@ -89,8 +105,7 @@ bt = 0.0;
 wb = 10;
 cb = 1;
 Sb = bassLineFilter(Sg, bt, wb, cb);
-myLinePlot(1:length(Sb), Sb, 'slice', 'semitone',...
-    nslices, ntones, '*', 'rough bassline');
+myLinePlot(1:length(Sb), Sb, 'slice', 'semitone',nslices, ntones, '*', 'rough bassline');
 
 % harmonic change filter (detect harmonic change boundaries)ht = 0.1;
 ht = 0.1;
