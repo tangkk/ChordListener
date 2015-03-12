@@ -14,7 +14,7 @@ feedbackpause = 0;
 display('input stage -- read audio from path');
 % input stage
 root = '../AudioSamples/';
-audio = 'putongpengyou/putongpengyou.02.mp3';
+audio = 'tuihou/tuihou.01.mp3';
 path = [root audio];
 [x, fs] = myInput(path);
 
@@ -33,10 +33,10 @@ nslices = sizeX(2);
 tk = (1/fs)*(1:length(x));
 kk = (1:nslices);
 ff = fs/2*linspace(0,1,wl/2);
-% myImagePlot(X, kk, ff, 'slice', 'Hz', 'spectrogram');
+myImagePlot(X, kk, ff, 'slice', 'Hz', 'spectrogram');
 
-fmin = 27.5; % MIDI note 21
-fmax = 1661; % MIDI note 92
+fmin = 27.5; % MIDI note 21, Piano key number 1
+fmax = 1661; % MIDI note 92, Piano key number 72
 fratio = 2^(1/36);
 numtones = 72*3;
 [Ms,Mc] = toneProfileGen(wl, numtones, fmin, fmax, fratio, fs);
@@ -51,22 +51,22 @@ Sc = Mc*X;
 Spre = Sc.*Sc;
 sizeM = size(Ms);
 ps = 1:sizeM(1);
-% myImagePlot(Ss, kk, ps, 'slice', '1/3 semitone', 'simple tone salience matrix');
-% myImagePlot(Sc, kk, ps, 'slice', '1/3 semitone', 'complex tone salience matrix');
-% myImagePlot(Spre, kk, ps, 'slice', '1/3 semitone', 'preliminary salience matrix');
+myImagePlot(Ss, kk, ps, 'slice', '1/3 semitone', 'simple tone salience matrix');
+myImagePlot(Sc, kk, ps, 'slice', '1/3 semitone', 'complex tone salience matrix');
+myImagePlot(Spre, kk, ps, 'slice', '1/3 semitone', 'preliminary salience matrix');
 
 % noise reduction process
 nt = 0.1;
 Ssn = noteSalienceNoiseReduce(Ss, nt);
 Scn = noteSalienceNoiseReduce(Sc, nt);
 Spren = Ssn.*Scn;
-% myImagePlot(Ssn, kk, ps, 'slice', '1/3 semitone', 'noised reduced simple tone salience matrix');
-% myImagePlot(Scn, kk, ps, 'slice', '1/3 semitone', 'noised reduced complex tone salience matrix');
+myImagePlot(Ssn, kk, ps, 'slice', '1/3 semitone', 'noised reduced simple tone salience matrix');
+myImagePlot(Scn, kk, ps, 'slice', '1/3 semitone', 'noised reduced complex tone salience matrix');
 myImagePlot(Spren, kk, ps, 'slice', '1/3 semitone', 'pre salience matrix');
 
 % long salience compensation process
 st = 0.1;
-bb = 28; % bass bound, only compensate below bass
+bb = 28; % bass bound, only compensate below bb
 wgmax = 10;
 Spren = compensateLongSalience(Spren,wgmax,st,bb);
 myImagePlot(Spren, kk, ps, 'slice', '1/3 semitone', 'compensated pre salience matrix');

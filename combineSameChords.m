@@ -2,16 +2,16 @@
 function [outchordogram, outbassgram, outtreblegram, chordboundaries] = combineSameChords(inchordogram, Shc)
 
 prevchord = strcat(inchordogram{3,1},inchordogram{2,1});
-outchordogram = cell(1,length(inchordogram));
-outbassgram = zeros(1,length(inchordogram));
-outtreblegram = zeros(1,length(inchordogram));
+outchordogram = cell(1,size(inchordogram,2));
+outbassgram = zeros(1,size(inchordogram,2));
+outtreblegram = zeros(1,size(inchordogram,2));
 outchordogram{1} = prevchord;
 outbassgram(1) = inchordogram{1,1};
 outtreblegram(1) = inchordogram{4,1};
-chordboundaries = zeros(1,length(inchordogram)+1);
+chordboundaries = zeros(1,size(inchordogram,2)+1);
 chordboundaries(1) = Shc(1);
 outidx = 2;
-for i = 2:1:length(inchordogram)
+for i = 2:1:size(inchordogram,2)
     curchord = strcat(inchordogram{3,i},inchordogram{2,i});
     curbass = inchordogram{1,i};
     curtreble = inchordogram{4,i};

@@ -28,20 +28,3 @@ xcut(xcut > rmst) = 1;
 xcut(xcut <= rmst) = 0;
 vc = find(xcut == 0);
 X(:,vc) = zeros(wl/2, length(find(vc)));
-
-% perform a high cut
-
-% X1 = X;
-% X1(X1 > 0.1) = 1;
-% % cut the false peaks (a true peak should not be with too many on bins)
-% maxbins = wl/8;
-% while true
-%     [maxval, maxidx] = max(sum(X1,1));
-%     if maxval > maxbins
-%         we = max(maxidx - 5,1) : min(maxidx + 5,size(X,2));
-%         X(:,we) = zeros(wl/2,length(we));
-%         X1(:,we) = zeros(wl/2,length(we));
-%     else
-%         break;
-%     end
-% end

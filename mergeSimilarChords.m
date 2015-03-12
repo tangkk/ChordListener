@@ -10,4 +10,3 @@
 function [chordogram, bassgram, treblegram, boundaries] = mergeSimilarChords(chordogram, bassgram, treblegram, boundaries, chordmode)
 
 
-
