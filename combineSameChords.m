@@ -1,27 +1,27 @@
 % combine the same chords
-function [outchordogram, outbassgram, outtreblegram, chordboundaries] = combineSameChords(inchordogram, Shc)
+function [outchordogram, outbassgram, outtreblegram, outboundaries] = combineSameChords(inchordogram, inbassgram, intreblegram, inboundaries)
 
-prevchord = strcat(inchordogram{3,1},inchordogram{2,1});
+prevchord = inchordogram{1};
 outchordogram = cell(1,size(inchordogram,2));
-outbassgram = zeros(1,size(inchordogram,2));
-outtreblegram = zeros(1,size(inchordogram,2));
+outbassgram = zeros(1,size(inbassgram,2));
+outtreblegram = zeros(1,size(intreblegram,2));
 outchordogram{1} = prevchord;
-outbassgram(1) = inchordogram{1,1};
-outtreblegram(1) = inchordogram{4,1};
-chordboundaries = zeros(1,size(inchordogram,2)+1);
-chordboundaries(1) = Shc(1);
+outbassgram(1) = inbassgram(1);
+outtreblegram(1) = intreblegram(1);
+outboundaries = zeros(1,size(inboundaries,2));
+outboundaries(1) = inboundaries(1);
 outidx = 2;
 for i = 2:1:size(inchordogram,2)
-    curchord = strcat(inchordogram{3,i},inchordogram{2,i});
-    curbass = inchordogram{1,i};
-    curtreble = inchordogram{4,i};
+    curchord = inchordogram{i};
+    curbass = inbassgram(i);
+    curtreble = intreblegram(i);
     if strcmp(curchord,prevchord)
         continue;
     else
         outchordogram{outidx} = curchord;
         outbassgram(outidx) = curbass;
         outtreblegram(outidx) = curtreble;
-        chordboundaries(outidx) = Shc(i);
+        outboundaries(outidx) = inboundaries(i);
         outidx = outidx + 1;
     end
     prevchord = curchord;
@@ -29,5 +29,5 @@ end
 outchordogram = outchordogram(1:outidx-1);
 outbassgram = outbassgram(1:outidx-1);
 outtreblegram = outtreblegram(1:outidx-1);
-chordboundaries(outidx) = Shc(end);
-chordboundaries = chordboundaries(1:outidx);
+outboundaries(outidx) = inboundaries(end);
+outboundaries = outboundaries(1:outidx);
