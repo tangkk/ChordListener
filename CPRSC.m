@@ -9,14 +9,16 @@ close all;
 clear;
 clc;
 
+% global control variables
 feedbackpause = 0;
-
-display('input stage -- read audio from path');
-% input stage
-root = '../AudioSamples/';
-audio = 'tuihou/tuihou.01.mp3';
-path = [root audio];
 usemono = false;
+grainsize = 1;
+
+% input stage
+display('input stage -- read audio from path');
+root = '../AudioSamples/';
+audio = 'haoting/haoting.07.mp3';
+path = [root audio];
 [x, fs] = myInput(path, usemono);
 
 % ********************************************************** %
@@ -148,9 +150,11 @@ chordogram = computeChordogram(basegram, uppergram, chordmode);
 [outchordogram, outbassgram, outtreblegram, outboundaries] = combineSameChords(outchordogram, outbassgram,...
     outtreblegram, outboundaries);
 
-grain = 1;
 [outchordogram, outbassgram, outtreblegram, outboundaries] = eliminateShortChords(outchordogram, outbassgram,...
-    outtreblegram, outboundaries, grain); 
+    outtreblegram, outboundaries, grainsize); 
+
+[outchordogram, outbassgram, outtreblegram, outboundaries] = mergeSimilarChords(outchordogram, outbassgram,...
+    outtreblegram, outboundaries, chordmode);
 
 myLinePlot(1:length(outbassgram), outbassgram, 'chord progression order', 'semitone',...
     length(outbassgram), 12, 'o', 'outbassgram', 0:12, bassnotenames);
@@ -187,9 +191,11 @@ newchordogram = computeChordogram(newbasegram, newuppergram, chordmode);
 [newoutchordogram, newoutbassgram, newouttreblegram, newoutboundaries] = combineSameChords(newoutchordogram, newoutbassgram,...
     newouttreblegram, newoutboundaries);
 
-newgrain = 1;
 [newoutchordogram, newoutbassgram, newouttreblegram, newoutboundaries] = eliminateShortChords(newoutchordogram, newoutbassgram,...
-    newouttreblegram, newoutboundaries, newgrain); 
+    newouttreblegram, newoutboundaries, grainsize);
+
+[newoutchordogram, newoutbassgram, newouttreblegram, newoutboundaries] = mergeSimilarChords(newoutchordogram, newoutbassgram,...
+    newouttreblegram, newoutboundaries, chordmode);
 
 myLinePlot(1:length(newoutbassgram), newoutbassgram, 'chord progression order', 'semitone',...
     length(newoutbassgram), 12, 'o', 'newoutbassgram', 0:12, bassnotenames);
