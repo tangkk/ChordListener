@@ -3,9 +3,11 @@ To use this piece of software, you must acknowledge the author:
 Deng Junqi (tangkk)
 dengjunqi06323011@gmail.com
 
-On building the testcases:
-When spliting audio into regions, use REAPER(http://www.reaper.fm/) to do the spliting, then use the "Batch file/item converter" built-in
-to export the splitted regions. (keyboard shortcut - ctrl+shift+f) Note that don't use the "Render" function since it will not exactly export what's bounded by the regions.
+On building the section test case:
+When splitting audio into regions, use REAPER(http://www.reaper.fm/) to do the splitting, then use the "Batch file/item converter" built-in to export the split regions. (keyboard shortcut - ctrl+shift+f) Note that don't use the "Render" function since it will not exactly export what's bounded by the regions.
 
-We can use this to split a long piece of audio into short pieces, or split it into chord regions so as to build the
-ground truths for chord recognition algorithms
+On building ground-truth chord progressions
+Before doing the following, make sure you import the song file in REAPER with it's beginning aligned to time 0 and set the project frame rate to be 60 in project settings. use REAPER to set markers at every chord boundaries, including the beginning and end of the song, then use SWS extension tool to export the markers using the format m[T]n. Save it as ''markers.txt". I've already wrote a matlab script(lrcGen.m) to transform the generated result to .lrc file. Then we manually add the human recognized chord labels to each location.
+
+On generating comparison case using chordino
+Chordino is a vamp-plugin on sonic visualizer platform, it distinguishes other chord recognition algorithms by using nnls+hmm, and yield a relatively high accuracy in various styles of input. Use the default setting of chordino to recognize chords. To export the result into LRC format, use "file->export annotation layer" to export as chordino.txt. Then use the matlab script lrcGen.m to transform it into lrc format.

@@ -365,3 +365,125 @@
 %             yes = 1;
 %             continue;
 %         end
+
+
+% % *************** Test nnls chroma ************%
+% nnlschroma = zeros(numtones, lenSlice);
+% for i = 1:1:lenSlice
+%     display(i);
+%     nnlschroma(:,i) = lsqnonneg(Mc', X(:,i));
+% end
+
+% % *************** Test nnls chroma ************%
+% % build the tone profiles for calculating note salience matrix
+% % each sinusoidal at frequency 'ftone' is generated via sin(2*pi*n*f/fs)
+% % try nnls method on Ss
+% fmin = 27.5; % MIDI note 21
+% fmax = 1661; % MIDI note 92
+% fratio = 2^(1/36);
+% numtonesn = 256;
+% wln = 512;
+% wn = hamming(wln);
+% Msn = zeros(numtonesn, wln/2); % simple tone profiles
+% Mcn = zeros(numtonesn, wln/2); % complex tone profiles
+% % the true frequency of the tone is supposed to lie on bin notenum*3-1,
+% % e.g. A4 is bin 49*3-1 = 146, C4 is bin 40*3-1 = 119 (note that notenum is
+% % not midinum, note num is the index of the key on a piano with A0 = 1)
+% for toneidx = 1:1:numtonesn
+%     ftone = fmin*(fratio^(toneidx-2));
+%     stone = sin(2*pi*(1:wln)*ftone/fs).*wn';
+%     ctone = (0.9*sin(2*pi*(1:wln)*ftone/fs) + 0.9^2*sin(2*pi*(1:wln)*2*ftone/fs) + ...
+%         0.9^3*sin(2*pi*(1:wln)*3*ftone/fs) + 0.9^4*sin(2*pi*(1:wln)*4*ftone/fs)).*wn';
+%     
+%     ffttone = abs(fft(stone));
+%     ffttone = ffttone(1:wln/2);
+%     ffttone = ffttone / norm(ffttone,2);
+%     
+%     fftctone = abs(fft(ctone));
+%     fftctone = fftctone(1:wln/2);
+%     fftctone = fftctone / norm(fftctone,2);
+%     Msn(toneidx,:) = ffttone;
+%     Mcn(toneidx,:) = fftctone;
+% end
+% nnlschroma = zeros(numtonesn, lenSlice);
+% for i = 1:1:lenSlice
+%     display(i);
+%     nnlschroma(:,i) = lsqnonneg(Mcn', Ss(:,i));
+% end
+% sfactor = 1000;
+% sizennls = size(nnlschroma);
+% p = 1:sizennls(1);
+% k = 1:sizennls(2);
+% figure;
+% image(k,p,sfactor*nnlschroma);
+% set(gca,'YDir','normal');
+% title('nnls chroma');
+% ****** the computation is too slow.... ****** %
+
+% % tuning algorithm (this algorithm seems to be unreliable)
+% Sbar = (sum(Spre,2))/sizeSpre(2); % first sum over all time frames
+% fftSbar = fft(Sbar, 2^nextpow2(sizeSpre(1)));
+% lenfftSbar = length(fftSbar);
+% tuningpoint = lenfftSbar/6; % normalized frequency pi/3
+% phi = angle(fftSbar(floor(tuningpoint)))*(tuningpoint - floor(tuningpoint))...
+%     + angle(fftSbar(ceil(tuningpoint)))*(ceil(tuningpoint) - tuningpoint); % take the angle at pi/3
+% d = - phi - 2*pi/3; % wrap d in [-pi,pi)
+% if d < -pi
+%     d = d + 2*pi;
+% end
+% if d > pi
+%     d = d - 2*pi;
+% end
+% d = d / (2*pi);
+% tau = 440*2^(d/12);
+% if d < 0
+%     for j = 1:1:sizeSpre(2)
+%         col = Spre(:,j);
+%         for i = 2:1:sizeSpre(1)
+%             % do interpolation here
+%             Spre(i,j) = -d*col(i-1) + (1+d)*col(i);
+%         end
+%     end
+% else
+%     for j = 1:1:sizeSpre(2)
+%         col = Spre(:,j);
+%         for i = 1:1:sizeSpre(1) - 1
+%             % do interpolation here
+%             Spre(i,j) = (1-d)*col(i) + d*col(i+1);
+%         end
+%     end
+% end
+
+% % write as LRC files the true chord boundaries recognized manually
+% target = 'haoting';
+% path = strcat('../AudioSamples/',target,'/chordsections/');
+% lrcpath = strcat('../AudioSamples/',target,'/');
+% 
+% files = sortFiles(path);
+% bdrys = zeros(1,length(files) + 1);
+% bdrys(1) = 0;
+% for i = 1:1:length(files)
+%     filepath = strcat(path,files(i).name);
+%     af = audioinfo(filepath);
+%     ns = af.TotalSamples;
+%     fs = af.SampleRate;
+%     bdrys(i+1) = bdrys(i) + ns;
+% end
+% bdrys = bdrys ./ fs;
+% 
+% lrc = strcat(lrcpath,strtok(files(1).name,'.'),'.gt.lrc');
+% fw = fopen(lrc,'w');
+% formatSpec1 = '%s';
+% formatSpec2 = '%s\n';
+% lenOut = length(bdrys) - 1;
+% for i = 1:1:lenOut
+%     sec = bdrys(i);
+%     timestr = strcat(num2str(floor(sec/60)),':',num2str(mod(sec,60)));
+%     s = strcat('[',timestr,']','N',num2str(i));
+%     fprintf(fw, formatSpec2, s);
+% end
+% sec = bdrys(end);
+% timestr = strcat(num2str(floor(sec/60)),':',num2str(mod(sec,60)));
+% s = strcat('[',timestr,']');
+% fprintf(fw, formatSpec1, s);
+% fclose(fw);

@@ -17,7 +17,8 @@ grainsize = 1;
 % input stage
 display('input stage -- read audio from path');
 root = '../AudioSamples/';
-audio = 'haoting/haoting.07.mp3';
+target = 'haoting';
+audio = strcat(target,'/',target,'.07.mp3');
 path = [root audio];
 [x, fs] = myInput(path, usemono);
 
@@ -208,3 +209,9 @@ writeChordProgression(path, nslices, hopsize, fs, newoutchordogram, newoutbounda
 
 % ********************* End of System A ******************** %
 display(strcat('end of system A recognizing:',path));
+
+% ********************************************************** %
+% ********************* Comparison - A******************* %
+% ********************************************************** %
+rco = groundTruthComparison(target);
+display(rco);
