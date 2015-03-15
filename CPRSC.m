@@ -18,7 +18,7 @@ grainsize = 1;
 display('input stage -- read audio from path');
 root = '../AudioSamples/';
 target = 'haoting';
-audio = strcat(target,'/',target,'.07.mp3');
+audio = strcat(target,'/',target,'.mp3');
 path = [root audio];
 [x, fs] = myInput(path, usemono);
 
@@ -164,7 +164,7 @@ myLinePlot(1:length(outboundaries), outboundaries, 'chord progression order', 's
 
 visualizeChordProgression(outchordogram, outbassgram, outboundaries);
 
-writeChordProgression(path, nslices, hopsize, fs, outchordogram, outboundaries);
+writeChordProgression(path, nslices, hopsize, fs, outchordogram, outbassgram, outboundaries);
 
 % ********************************************************** %
 % ********************* Feedback Once - A******************* %
@@ -205,7 +205,7 @@ myLinePlot(1:length(newoutboundaries), newoutboundaries, 'chord progression orde
 
 visualizeChordProgression(newoutchordogram, newoutbassgram, newoutboundaries);
 
-writeChordProgression(path, nslices, hopsize, fs, newoutchordogram, newoutboundaries);
+writeChordProgression(path, nslices, hopsize, fs, newoutchordogram, newoutbassgram, newoutboundaries);
 
 % ********************* End of System A ******************** %
 display(strcat('end of system A recognizing:',path));
@@ -213,5 +213,6 @@ display(strcat('end of system A recognizing:',path));
 % ********************************************************** %
 % ********************* Comparison - A******************* %
 % ********************************************************** %
-rco = groundTruthComparison(target);
-display(rco);
+r = groundTruthComparison(target);
+display('r = [cdbrco, cdtrco, cdrco, cdsq; cpbrco, cptrco, cprco, cpsq]:');
+display(r);
