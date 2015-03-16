@@ -26,8 +26,6 @@ switch treble
         tt = 1;
     case 'aug'
         tt = 1;
-    case 'aug7'
-        tt = 1;
     case '+'
         tt = 1;
     case '+7'
@@ -49,6 +47,10 @@ switch treble
     case 'minmaj7'
         tt = 2;
     case 'mM7'
+        tt = 2;
+    case 'm7-5'
+        tt = 2;
+    case 'm7b5'
         tt = 2;
     case '-'
         tt = 2;
@@ -84,9 +86,15 @@ switch treble
         tt = 3;
     case 'sus2'
         tt = 3;
-    case '/5'
+    case 'm/5'
         tt = 3;
     case 'm/7'
+        tt = 3;
+    case 'm/7+'
+        tt = 3;
+    case 'm/2'
+        tt = 3;
+    case '/5'
         tt = 3;
     case '/7'
         tt = 3;

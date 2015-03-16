@@ -1,17 +1,25 @@
 function bass = upperbass2bass(upperbass, treble)
 
 switch treble
-    case 'maj/3'
+    case '/3'
         transval = 4;
-    case 'maj/5'
+    case 'm/3'
+        transval = 4;
+    case '/5'
         transval = 7;
-    case 'min/7'
+    case 'm/5'
+        transval = 7;
+    case '/7'
         transval = 10;
-    case 'maj/7'
+    case 'm/7'
         transval = 10;
-    case 'maj/7+'
+    case '/7+'
         transval = 11;
-    case 'maj/2'
+    case 'm/7+'
+        transval = 11;
+    case '/2'
+        transval = 2;
+    case 'm/2'
         transval = 2;
     otherwise
         transval = 0;
