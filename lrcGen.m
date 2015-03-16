@@ -1,5 +1,5 @@
 % generate lrc file from reaper marker output
-target = 'haoting';
+target = 'anjing';
 lrcpath = strcat('../AudioSamples/',target,'/');
 
 % transform reaper markers to lrc
