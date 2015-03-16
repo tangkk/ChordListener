@@ -17,8 +17,8 @@ grainsize = 1;
 % input stage
 display('input stage -- read audio from path');
 root = '../AudioSamples/';
-target = 'haoting';
-audio = strcat(target,'/',target,'.mp3');
+target = 'xiaoxiaochong';
+audio = strcat(target,'/',target,'.04.mp3');
 path = [root audio];
 [x, fs] = myInput(path, usemono);
 
@@ -213,6 +213,6 @@ display(strcat('end of system A recognizing:',path));
 % ********************************************************** %
 % ********************* Comparison - A******************* %
 % ********************************************************** %
-r = groundTruthComparison(target);
-display('r = [cdbrco, cdtrco, cdrco, cdsq; cpbrco, cptrco, cprco, cpsq]:');
-display(r);
+% r = groundTruthComparison(target);
+% display('r = [cdbrco, cdtrco, cdrco, cdsq; cpbrco, cptrco, cprco, cpsq]:');
+% display(r);

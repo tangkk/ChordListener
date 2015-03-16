@@ -23,7 +23,9 @@
 %   a detected boundary within 1/10 of the median of gt boundary-diffs
 % definition of significant difference between algorithms:
 %   Friedman rank
-function r = groundTruthComparison(target)
+
+% function r = groundTruthComparison(target)
+target = 'haoting';
 gtpath = strcat('gt/',target,'.gt.lrc'); % groundtruth output path
 cdpath = strcat('cd/',target,'.cd.lrc'); % chordino output path
 cppath = strcat('cp/',target,'.cp.lrc'); % cprs output path
@@ -52,3 +54,7 @@ cprco = computeRCO(gtbassgram, gttreblegram, gtboundaries, cpbassgram, cptrebleg
 cpsq = computeSQ(gtboundaries, cpboundaries, BE);
 
 r = [cdbrco, cdtrco, cdrco, cdsq; cpbrco, cptrco, cprco, cpsq];
+display('chordino: brco, trco, rco, sq :');
+display(r(1,:));
+display('cprs: brco, trco, rco, sq :');
+display(r(2,:));
