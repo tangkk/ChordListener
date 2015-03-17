@@ -17,7 +17,8 @@ for i = 1:1:length(gtbassgram)
     gtbass = gtbassgram(i);
     gttreble = gttreblegram(i);
     for j = 1:1:length(boundset) - 1
-        if bassset(j) == gtbass && (trebleset(j) == gttreble || trebleset(j) == 3 || gttreble == 3)
+        if (bassset(j) == gtbass||bassset(j) == 0 || gtbass==0) &&...
+           (trebleset(j) == gttreble || trebleset(j) == 3 || gttreble == 3||trebleset(j) == 0 || gttreble == 0)
             CD = CD + boundset(j+1) - boundset(j);
         end
     end

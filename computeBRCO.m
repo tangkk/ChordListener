@@ -11,9 +11,11 @@ for i = 1:1:length(gtbassgram)
     boundset = [st boundaries(boundst(2):boundet(1)) et];
     bassset = [bst bassgram(boundst(2):boundet(1))];
     
+    % note that the bass == 0 case are rare, so it won't affect much of
+    % the performance
     gtbass = gtbassgram(i);
     for j = 1:1:length(bassset)
-        if bassset(j) == gtbass
+        if bassset(j) == gtbass || bassset(j) == 0 || gtbass == 0
             BCD = BCD + boundset(j+1) - boundset(j);
         end
     end

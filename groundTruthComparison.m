@@ -54,7 +54,7 @@ cprco = computeRCO(gtbassgram, gttreblegram, gtboundaries, cpbassgram, cptrebleg
 cpsq = computeSQ(gtboundaries, cpboundaries, BE);
 
 r = [cdbrco, cdtrco, cdrco, cdsq; cpbrco, cptrco, cprco, cpsq];
-display('chordino: brco, trco, rco, sq :');
+display('chordino: brco, trco, rco, sq:');
 display(r(1,:));
-display('cprs: brco, trco, rco, sq :');
+display('cprs: brco, trco, rco, sq:');
 display(r(2,:));

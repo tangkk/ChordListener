@@ -17,8 +17,8 @@ grainsize = 1;
 % input stage
 display('input stage -- read audio from path');
 root = '../AudioSamples/';
-target = 'xiaoxiaochong';
-audio = strcat(target,'/',target,'.04.mp3');
+target = '1984';
+audio = strcat(target,'/',target,'.01.mp3');
 path = [root audio];
 [x, fs] = myInput(path, usemono);
 
@@ -33,6 +33,7 @@ hopsize = 512;
 X = mySpectrogram(x, wl, hopsize);
 sizeX = size(X);
 nslices = sizeX(2);
+endtime = (1/fs)*length(x);
 tk = (1/fs)*(1:length(x));
 kk = (1:nslices);
 ff = fs/2*linspace(0,1,wl/2);
@@ -164,7 +165,7 @@ myLinePlot(1:length(outboundaries), outboundaries, 'chord progression order', 's
 
 visualizeChordProgression(outchordogram, outbassgram, outboundaries);
 
-writeChordProgression(path, nslices, hopsize, fs, outchordogram, outbassgram, outboundaries);
+writeChordProgression(path, nslices, hopsize, fs, outchordogram, outbassgram, outboundaries, endtime);
 
 % ********************************************************** %
 % ********************* Feedback Once - A******************* %
@@ -205,7 +206,7 @@ myLinePlot(1:length(newoutboundaries), newoutboundaries, 'chord progression orde
 
 visualizeChordProgression(newoutchordogram, newoutbassgram, newoutboundaries);
 
-writeChordProgression(path, nslices, hopsize, fs, newoutchordogram, newoutbassgram, newoutboundaries);
+writeChordProgression(path, nslices, hopsize, fs, newoutchordogram, newoutbassgram, newoutboundaries, endtime);
 
 % ********************* End of System A ******************** %
 display(strcat('end of system A recognizing:',path));
