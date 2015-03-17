@@ -21,7 +21,7 @@ while ischar(tline) && length(tline) > 1
             bass = bass2num(ch);
             treble = '';
         elseif (length(ch) > 1)
-            if ch(2) ~= '#' || ch(2) ~= 'b'
+            if ch(2) ~= '#' && ch(2) ~= 'b'
                 bass = bass2num(ch(1));
                 treble = ch(2:end);
             else

@@ -7,16 +7,16 @@
 % chord relative correct overlap (rco) =
 %   # chord matching frames / total # of frames
 % segmentation quality (sq) =
-%   (# of correct boundaries - # of incorrect boundaries) / total # of boundaries
-%   (or alternatively, use "Hamming divergence")
+%   # of correct boundaries / total # of boundaries
 % chord progression quality (cpq) =
 %   sum of # of frames of 3 longest matching sequence / total # of frames
 %
 % definition of correct bass matching:
-%   'N' bass matches nothing
+%   bass 0 matches all
 %   other basses match the same basses pitch (note the "#" and "b")
 % definition of correct treble matching:
 %   two treble matches if their types match
+%   treble 'N' matches all
 % definition of correct chord matching:
 %   if both bass and treble match, they match
 % definition of correct boundary:
@@ -25,7 +25,7 @@
 %   Friedman rank
 
 % function r = groundTruthComparison(target)
-target = 'haoting';
+target = 'xiaoxiaochong';
 gtpath = strcat('gt/',target,'.gt.lrc'); % groundtruth output path
 cdpath = strcat('cd/',target,'.cd.lrc'); % chordino output path
 cppath = strcat('cp/',target,'.cp.lrc'); % cprs output path
@@ -53,6 +53,7 @@ cptrco = computeTRCO(gttreblegram, gtboundaries, cptreblegram, cpboundaries, TD)
 cprco = computeRCO(gtbassgram, gttreblegram, gtboundaries, cpbassgram, cptreblegram, cpboundaries, TD);
 cpsq = computeSQ(gtboundaries, cpboundaries, BE);
 
+display(target);
 r = [cdbrco, cdtrco, cdrco, cdsq; cpbrco, cptrco, cprco, cpsq];
 display('chordino: brco, trco, rco, sq:');
 display(r(1,:));

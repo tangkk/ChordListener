@@ -27,5 +27,18 @@ if strcmp(boundtype, 'et')
     end
 end
 
+if strcmp(boundtype, 'wt')
+    wt = t;
+    for i = 1:1:length(boundaries) - 1
+        sb = boundaries(i);
+        eb = boundaries(i+1);
+        if wt >= sb && wt <= eb
+            bound(1) = i;
+            bound(2) = i+1;
+            break;
+        end
+    end
+end
+
 
     

@@ -2,7 +2,7 @@ function out = bass2num(in)
 
 if strcmp(in,'C')
     out = 1;
-elseif strcmp(in,'C#') || strcmp(in, 'Db')
+elseif strcmp(in,'C#') || strcmp(in,'Db')
     out = 2;
 elseif strcmp(in,'D')
     out = 3;

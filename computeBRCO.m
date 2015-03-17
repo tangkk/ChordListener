@@ -7,7 +7,7 @@ for i = 1:1:length(gtbassgram)
     boundst = locatebound(st,boundaries, 'st');
     bst = bassgram(boundst(1));
     boundet = locatebound(et,boundaries, 'et');
-    bet = bassgram(boundet(1));
+%     bet = bassgram(boundet(1));
     boundset = [st boundaries(boundst(2):boundet(1)) et];
     bassset = [bst bassgram(boundst(2):boundet(1))];
     

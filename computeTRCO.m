@@ -7,7 +7,7 @@ for i = 1:1:length(gttreblegram)
     boundst = locatebound(st,boundaries, 'st');
     tst = treblegram(boundst(1));
     boundet = locatebound(et,boundaries, 'et');
-    tet = treblegram(boundet(1));
+%     tet = treblegram(boundet(1));
     boundset = [st boundaries(boundst(2):boundet(1)) et];
     trebleset = [tst treblegram(boundst(2):boundet(1))];
     
