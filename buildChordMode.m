@@ -30,12 +30,15 @@
 % 1->3->5->7b dom7     1,5,8,11         4,7,10       1,1-s,s    1,3
 % 1->3b->5b->7bb dim7  1,4,7,10         3,6,9        1,1-s,s    2,3
 % 1->3b->5b->7b m7-5   1,4,7,11         3,6,10       1,1-s,s    2,3
+% 1->2->4#->6 maj/7    1,3,7,10         2,6,9        1,1-c,1-c  3,3
+% 1->2b->4->6b maj/7+  1,2,6,9          1,5,8        1,1-c,1-c  3,3
+% 1->2->4->7b maj/2    1,3,6,11         2,5,10       1,1-c,1-c  3,3
 % 1->2->4->6 min/7     1,3,6,10         2,5,9        1,1-c,1-c  3,3
 % 1->2b->3->6b min/7+  1,2,5,9          1,4,8        1,1-c,1-c  3,3
-% 1->2->4->7b min/2    1,3,6,11         2,5,10       1,1-c,1-c  3,3
-% 1->2->4#->6 maj/7    1,3,7,10         2,6,9        1,1-c,1-c  3,3
-% 1->1#->4->6b maj/7+  1,2,6,9          1,5,8        1,1-c,1-c  3,3
-% 1->2->4->7b maj/2    1,3,6,11         2,5,10       1,1-c,1-c  3,3
+% 1->2b->4->7b min/2   1,2,6,11         1,5,10       1,1-c,1-c  3,3
+
+% if this file is modified, also check file "trebleTypeMapping.m",
+% "trebleMatching.m", uppergbass2bass.m", "bass2upperbass.m" and "slash2BassTreble.m"
 
 function chordmode = buildChordMode
 
@@ -187,33 +190,6 @@ chordmode{2,idx} = 'm7-5';
 chordmode{3,idx} = [1,1-s,s];
 idx = idx + 1;
 
-chordmode{1,idx} = [2,5,9];
-chordmode{2,idx} = 'm/7';
-if slashchordcomp
-    chordmode{3,idx} = [1,1-c,1-c];
-else
-    chordmode{3,idx} = [1,1,1];
-end
-idx = idx + 1;
-
-chordmode{1,idx} = [1,4,8];
-chordmode{2,idx} = 'm/7+';
-if slashchordcomp
-    chordmode{3,idx} = [1,1-c,1-c];
-else
-    chordmode{3,idx} = [1,1,1];
-end
-idx = idx + 1;
-
-chordmode{1,idx} = [2,5,10];
-chordmode{2,idx} = 'm/2';
-if slashchordcomp
-    chordmode{3,idx} = [1,1-c,1-c];
-else
-    chordmode{3,idx} = [1,1,1];
-end
-idx = idx + 1;
-
 chordmode{1,idx} = [2,6,9];
 chordmode{2,idx} = '/7';
 if slashchordcomp
@@ -239,6 +215,34 @@ if slashchordcomp
 else
     chordmode{3,idx} = [1,1,1];
 end
+idx = idx + 1;
+
+chordmode{1,idx} = [2,5,9];
+chordmode{2,idx} = 'm/7';
+if slashchordcomp
+    chordmode{3,idx} = [1,1-c,1-c];
+else
+    chordmode{3,idx} = [1,1,1];
+end
+idx = idx + 1;
+
+chordmode{1,idx} = [1,4,8];
+chordmode{2,idx} = 'm/7+';
+if slashchordcomp
+    chordmode{3,idx} = [1,1-c,1-c];
+else
+    chordmode{3,idx} = [1,1,1];
+end
+idx = idx + 1;
+
+chordmode{1,idx} = [1,5,10];
+chordmode{2,idx} = 'm/2';
+if slashchordcomp
+    chordmode{3,idx} = [1,1-c,1-c];
+else
+    chordmode{3,idx} = [1,1,1];
+end
+
 idx = idx + 1;
 
 chordmode = chordmode(:,1:idx - 1);

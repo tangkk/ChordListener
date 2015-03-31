@@ -17,8 +17,8 @@ grainsize = 1;
 % input stage
 display('input stage -- read audio from path');
 root = '../AudioSamples/';
-target = 'xiaoxiaochong';
-audio = strcat(target,'/',target,'.mp3');
+target = 'demo';
+audio = strcat(target,'/','haoting','.mp3');
 path = [root audio];
 [x, fs] = myInput(path, usemono);
 
